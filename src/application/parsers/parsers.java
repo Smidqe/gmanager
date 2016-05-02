@@ -42,7 +42,7 @@ public class parsers {
 		return JSONtoMap(__object);
 	}
 	
-	private static Map<String, Object> JSONtoMap(JSONObject __object)
+	public static Map<String, Object> JSONtoMap(JSONObject __object)
 	{
 		if (__object == null)
 			return null;
@@ -98,4 +98,6 @@ public class parsers {
 		
 		return null;
 	}
+	
+	
 }
