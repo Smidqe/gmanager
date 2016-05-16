@@ -15,6 +15,17 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+
+/*
+	Derpibooru: JSON Structure:
+		- ArrayList images
+			- Images as ArrayList
+				- Representations as HashMap
+		- ArrayList interactions
+
+
+ */
+
 public class parsers {
 	
 	private static ArrayList<Object> convert(JSONArray __array)
@@ -99,5 +110,15 @@ public class parsers {
 		return null;
 	}
 	
-	
+	@SuppressWarnings("unchecked")
+	public static ArrayList<Map<String, Object>> parse_db(JSONObject object)
+	{
+		Map<String, Object> __map = JSONtoMap(object);
+		ArrayList<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+		
+		for (Object obj : (ArrayList<Object>) __map.get("images"))
+			list.add((Map<String, Object>) obj);
+		
+		return list;
+	}
 }

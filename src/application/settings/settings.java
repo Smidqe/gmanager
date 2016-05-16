@@ -1,26 +1,40 @@
 package application.settings;
 
-import application.types.TFile;
+import libfs.files.TIni;
+
+import java.io.IOException;
+
+import application.globals.constants;
 
 public class settings {
 	private static settings __self = new settings();
-	private TFile file;
-	
+	public TIni images, settings;
+	public constants constants;
 	
 	private settings()
 	{
+		try 
+		{
+			this.settings = new TIni("/config/settings.ini", false);
+			this.images = new TIni("/config/images.ini", false);
+		} 
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+		
 		
 	}
 	
-	public String get(String section, String variable)
-	{
-		return file.iniRead(section, variable);
-	}
+/*
+
 	
-	public void set(String section, String key, String value)
-	{
-		file.iniWrite(value, section, key);
-	}
+
+
+
+
+
+*/
 	
 	public static settings instance()
 	{

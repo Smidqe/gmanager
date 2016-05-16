@@ -15,12 +15,14 @@ public class Main extends Application {
 	        Parent root = FXMLLoader.load(getClass().getResource("gui/gui_new.fxml"));
 	        
 	        Scene scene = new Scene(root);
+	        scene.getStylesheets().add("application/resources/gui.css");
 	        
 	        stage.initStyle(StageStyle.UNDECORATED);
 	        stage.setScene(scene);
 	        
 	        stage.setOnCloseRequest(e -> Platform.exit());
 	        stage.show();
+	        
 	        
 		} catch(Exception e) {
 			e.printStackTrace();

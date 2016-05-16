@@ -1,42 +1,21 @@
 package application.types;
 
-import java.util.HashMap;
-
 public class TImage{
-	private HashMap<String, Object> info;
 	
-	private int width, height, faves, upvotes, comments;
+	private long width, height, faves, upvotes;
 	private double size;
 	private String url, thumbnail, image, source, name, description, type;
 	
-
-	public TImage(String url) 
-	{
-		this.url = url;
-		this.info = new HashMap<String, Object>();
-	}
-	
 	public TImage()
 	{
-		this.info = new HashMap<String, Object>();
 	}
 
-	public void setInfo(HashMap<String, Object> info)
-	{
-		this.info = info;
-	}
-	
-	public HashMap<String, Object> getInfo()
-	{
-		return this.info;
-	}
-	
-	public int width()
+	public long width()
 	{
 		return this.width;
 	}
 
-	public int height()
+	public long height()
 	{
 		return this.height;
 	}
@@ -55,16 +34,12 @@ public class TImage{
 		return size;
 	}
 
-	public int favorites() {
+	public long favorites() {
 		return faves;
 	}
 
-	public int upvotes() {
+	public long upvotes() {
 		return upvotes;
-	}
-
-	public int comments() {
-		return comments;
 	}
 
 	public String thumbnail() {
@@ -91,28 +66,24 @@ public class TImage{
 		return type;
 	}
 
-	public void setWidth(int width) {
-		this.width = width;
+	public void setWidth(long l) {
+		this.width = l;
 	}
 
-	public void setHeight(int height) {
-		this.height = height;
+	public void setHeight(long l) {
+		this.height = l;
 	}
 
 	public void setSize(int size) {
 		this.size = size;
 	}
 
-	public void setFavorites(int faves) {
-		this.faves = faves;
+	public void setFavorites(long l) {
+		this.faves = l;
 	}
 
 	public void setUpvotes(int upvotes) {
 		this.upvotes = upvotes;
-	}
-
-	public void setComments(int comments) {
-		this.comments = comments;
 	}
 
 	public void setUrl(String url) {
@@ -142,4 +113,13 @@ public class TImage{
 	public void setType(String type) {
 		this.type = type;
 	}
+
+	@Override
+	public String toString() {
+		return "TImage [width=" + width + ", height=" + height + ", faves=" + faves + ", upvotes=" + upvotes + ", size="
+				+ size + ", url=" + url + ", thumbnail=" + thumbnail + ", image=" + image + ", source=" + source
+				+ ", name=" + name + ", description=" + description + ", type=" + type + "]";
+	}
+	
+	
 }

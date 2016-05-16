@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,18 +18,21 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.TilePane;
 import javafx.stage.Screen;
 import javafx.stage.Window;
+
 import application.globals.constants;
 import application.images.*;
-import application.parsers.parsers;
+import application.web.*;
 
 public class c_main implements Initializable{
 
@@ -39,10 +40,8 @@ public class c_main implements Initializable{
 	@FXML private ScrollPane sp_images;
 	@FXML private TilePane tp_images, tp_search;
 	@FXML private MenuItem mi_account, mi_settings, mi_switch, mi_exit;
-	@FXML private Button btn_mark, btn_download;
+	@FXML private Button btn_mark, btn_download, btn_exit;
 	
-	
-	@SuppressWarnings("unused")
 	private images __images;
 	private ArrayList<AnchorPane> __layers;
 	
@@ -50,6 +49,7 @@ public class c_main implements Initializable{
 	private Rectangle2D window;
 	private boolean fullscreen; 
 	private int page = 0;
+	private connections connection;
 
 	private String source(String regex, String text, int group)
 	{
@@ -78,15 +78,11 @@ public class c_main implements Initializable{
 	private void focus(ActionEvent __event)
 	{
 		String __source = "";
-		
-		System.out.println("__event: " + __event.getSource().toString());
 
 		if (__event.getSource() instanceof MenuItem)
 			__source = source("\\s*([(id=)]*)=(.*),", __event.getSource().toString(), 2); //menuitems only have ID avaivable from ActionEvent unless specifically casted into a MenuItem! 
 		else
 			__source = source("\\s*([^=]*)'(.*)'", __event.getSource().toString(), 2);
-		
-		System.out.println("__source: " + __source);
 
 		if (!__source.isEmpty())
 			mode(current_pane, false);
@@ -147,14 +143,13 @@ public class c_main implements Initializable{
         window.setY(event.getScreenY() + point.getY());
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public void initialize(URL arg0, ResourceBundle arg1) {
+	public void initialize(URL arg0, ResourceBundle arg1) {	
 		// TODO Auto-generated method stub
-	
-		
-		for (int i = 0; i < 15; i++)
-			tp_images.getChildren().add(new ImageView("https://derpicdn.net/img/2016/5/2/1144648/thumb_small.jpeg"));
+
+		connection = new connections();
+		__images = images.instance();
+
 		
 		ap_main.setOnMousePressed(new EventHandler<MouseEvent>() {
 
@@ -181,70 +176,33 @@ public class c_main implements Initializable{
 			
 		});
 		
-		
 		__layers = new ArrayList<AnchorPane>();
 		__layers.addAll(Arrays.asList(lr_images, lr_search, lr_filters, lr_account, lr_settings, lr_pageswitch));
-	
-		
+
 		for (AnchorPane pane : __layers)
 			mode(pane, false);
 		
 		mode(__layers.get(0), true);
 		
-		URL site = null;
 		try {
-			site = new URL("https://derpibooru.org/images.json");
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
-		try {
-			Map<String, Object> map = parsers.parseJSON(site.openStream());
-			
-			System.out.println("Size: " + map.size());
-			
-			//won't be this deep, since we already know what is what and how they work. we already have the keys
-			for (String key : map.keySet())
-			{				
-				System.out.println(key);
-				if (map.get(key) instanceof ArrayList)
-				{
-					ArrayList<Object> values = (ArrayList<Object>) map.get(key);
-					
-					for (Object __object : values)
-					{
-						
-						if (__object instanceof HashMap)
-						{
-							
-							
-							HashMap<String, Object> mmap = (HashMap<String, Object>) __object;
-							System.out.println(mmap);
-							
-							for (Object __obj : mmap.keySet())
-							{
-//								if (mmap.get(__obj) instanceof ArrayList)
-//									System.out.println("ArrayList");
-//								
-//								if (mmap.get(__obj) instanceof HashMap)
-//									System.out.println("HashMap"); 
-								
-								//System.out.println("KEY[SUB]: " + __obj);
-								//System.out.println("VALUE[SUB]: " + mmap.get(__obj));
-							
-								
-							}
-						}
-					}
-				}
-			}
-			
-			
-		} catch (IOException | ParseException e) {
-			System.out.println("Error occurred");
+			__images.append(connection.getJSON(connection.getSite(constants.__INDEX_SUBSITE_DERPIBOORU_IMAGES)));
+		} catch (IOException | ParseException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
 		}
 		
+		for (int i = 0; i < 15; i++)
+			tp_images.getChildren().add(new ImageView(__images.getThumbnail(i)));
 		
+		
+		try {
+			connection.ping(constants.__INDEX_SUBSITE_DERPIBOORU_IMAGES, page, true);
+			
+			
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 	}
 }

@@ -1,5 +1,6 @@
 package application.images;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,8 +10,8 @@ import java.util.Map;
 import org.json.simple.JSONObject;
 
 import application.globals.constants;
+import application.parsers.parsers;
 import application.types.TImage;
-//import files.TIni;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.TilePane;
 
@@ -69,31 +70,111 @@ public class images {
 			append(images, img, !images.contains(img));
 	}
 
-	public void append(JSONObject json)
+	public void append(JSONObject json) throws IOException
 	{
+		if (json == null)
+			return;
 		
+		switch(this.current_site)
+		{
+		case constants.__INDEX_SITE_DERPIBOORU : 
+			this.images.addAll(create_db(parsers.parse_db(json))); break;
+		}
+		
+		this.clearDoubles();
 	}
 	
-	public ArrayList<TImage> create(Map<String, Object> values)
+	/*
+	
+	public String getID(int ID)
 	{
+		switch(this.current_site)
+		{
+			case __INDEX_SITE_DERPIBOORU: section = "IMAGE_DERPIBOORU"; break;
+		}
+		
+		return settings.images.get(section, ID);
+	}
+	
+	 */
+	public String getID(int site, int ID)
+	{
+		switch (ID)
+		{
+			case constants.__ID_IMAGE_SIZE_FULL:
+			{
+				switch (site)
+				{
+					case constants.__INDEX_SITE_DERPIBOORU: return "image";
+					case constants.__INDEX_SITE_IMGUR: return "link";
+				}
+			}
+			
+			case constants.__ID_IMAGE_SIZE_THUMBNAIL:
+			{
+				switch (site)
+				{
+					case constants.__INDEX_SITE_DERPIBOORU: return "thumb_small";
+					case constants.__INDEX_SITE_IMGUR: return "";
+				}
+			}
+			
+			//move these under sub switches once a new site is added! TODO
+			case constants.__ID_IMAGE_SIZE_WIDTH: return "width";
+			case constants.__ID_IMAGE_SIZE_HEIGHT: return "height";
+			case constants.__ID_IMAGE_SIZE: return (site == constants.__INDEX_SITE_DERPIBOORU ? "" : "size");
+			case constants.__ID_IMAGE_SOURCE: return (site == constants.__INDEX_SITE_DERPIBOORU ? "source_url" : "");
+			case constants.__ID_IMAGE_NAME: return "id";
+			case constants.__ID_IMAGE_DESCRIPTION: return "description";
+			case constants.__ID_IMAGE_TYPE: return (site == constants.__INDEX_SITE_DERPIBOORU ? "mime_type" : "type");
+			case constants.__ID_IMAGE_FAVORITES: return (site == constants.__INDEX_SITE_DERPIBOORU ? "faves" : ""); 
+			case constants.__ID_IMAGE_UPVOTES: return (site == constants.__INDEX_SITE_DERPIBOORU ? "upvotes" : "");
+		}
+		
+		return null;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public ArrayList<TImage> create_db(ArrayList<Map<String, Object>> values) throws IOException
+	{
+		ArrayList<TImage> list = new ArrayList<TImage>();
 		/*
 			Need to grab right values
 				- Ultimately they are in ini files.
 				- 
 		
 		 */
-		//TIni ini = new TIni(null, false);
 		for (int i = 0; i < values.size(); i++)
 		{
-			//TImage img = new TImage();
+			TImage img = new TImage();
 			
-			//img.setImage((Arrayvalues.get("images").);
+			img.setName((String) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_NAME)));
+			img.setWidth((long) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_SIZE_WIDTH)));
+			img.setHeight((long) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_SIZE_HEIGHT)));
+			img.setFavorites((long) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_FAVORITES)));
+			img.setSource((String) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_SOURCE)));
+			img.setType((String) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_TYPE)));
+			img.setURL("https:" + (String) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_SIZE_FULL)));		
+			img.setThumbnail("https:" + (String) ((HashMap<String, Object>) values.get(i).get("representations")).get(getID(this.current_site, constants.__ID_IMAGE_SIZE_THUMBNAIL)));
+
+			list.add(img);
 		}
-		
-		return null;
+
+		return list;
 		
 	}
 	
+	public String getSite() 
+	{
+		switch (current_site)
+		{
+			case constants.__INDEX_SITE_DERPIBOORU: return "Derpibooru";
+			case constants.__INDEX_SITE_IMGUR: return "Imgur";
+		}
+		
+		return null;
+	}
+
 	public void populate(TilePane tiles, boolean append)
 	{
 		if (!append)
@@ -134,12 +215,11 @@ public class images {
 		return this.images;
 	}
 
-	@SuppressWarnings("unchecked")
 	public String getThumbnail(int index)
 	{
 		switch	(this.current_site)
 		{
-			case constants.__INDEX_SITE_DERPIBOORU: return (String) ((HashMap<String, Object>) this.images.get(index).getInfo().get("representations")).get("thumb_small");
+			case constants.__INDEX_SITE_DERPIBOORU: return this.images.get(index).thumbnail();
 			case constants.__INDEX_SITE_IMGUR: return "";
 		}
 		
@@ -148,27 +228,19 @@ public class images {
 	
 	public List<Integer> size(int index)
 	{
-		switch (this.current_site)
-		{
-			case constants.__INDEX_SITE_DERPIBOORU: case constants.__INDEX_SITE_IMGUR:
-				return Arrays.asList((int) this.images.get(index).width(), (int) this.images.get(index).height());
-		}
+		if (this.images.size() < index)
+			return null;
 		
-		return null;
+		return Arrays.asList((int) this.images.get(index).width(), (int) this.images.get(index).height());
 	}
 	
 	public String getImageURL(int index)
 	{
-		String __id = null;
-		
-		switch (this.current_site)
-		{
-			case constants.__INDEX_SITE_IMGUR: __id = "link"; break;
-			case constants.__INDEX_SITE_DERPIBOORU: __id = "image"; break;
-		}
-		
-		return (__id != null) ? (String) this.images.get(index).getInfo().get(__id) : null;
+		return this.images.get(index).URL();
 	}
 	
-	
+	public void setCurrentSite(int site)
+	{
+		this.current_site = site;
+	}
 }
