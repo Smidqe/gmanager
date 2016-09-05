@@ -3,15 +3,17 @@ package application.images;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 
-import application.globals.constants;
+import application.data.resources.globals.globals;
+import application.images.image.TImage;
 import application.parsers.parsers;
-import application.types.TImage;
+import application.web.connections.connections;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.TilePane;
 
@@ -24,6 +26,18 @@ import javafx.scene.layout.TilePane;
 
 
 public class images {
+	public static final int __ID_IMAGE_SIZE_FULL = 0; //the full image url
+	public static final int __ID_IMAGE_SIZE_THUMBNAIL = 1; //thumbnail url
+	public static final int __ID_IMAGE_SIZE_WIDTH = 2; //image width
+	public static final int __ID_IMAGE_SIZE_HEIGHT = 3; //image height
+	public static final int __ID_IMAGE_SIZE = 4; //image size
+	public static final int __ID_IMAGE_SOURCE = 5; //image source if exists
+	public static final int __ID_IMAGE_NAME = 6; //name or id ???
+	public static final int __ID_IMAGE_DESCRIPTION = 7; //if there is any description
+	public static final int __ID_IMAGE_TYPE = 8; //type or mime_type
+	public static final int __ID_IMAGE_FAVORITES = 9; //amount of faves
+	public static final int __ID_IMAGE_UPVOTES = 10; //amount of upvotes/score
+
 	private ArrayList<TImage> images;
 	private TImage last;
 	private int current_site;
@@ -45,6 +59,7 @@ public class images {
 		for (TImage image : images)
 			append(filtered, image, !filtered.contains(image));
 		
+		this.images.clear();
 		this.images = filtered;
 	}
 	
@@ -77,11 +92,16 @@ public class images {
 		
 		switch(this.current_site)
 		{
-		case constants.__INDEX_SITE_DERPIBOORU : 
+		case globals.__INDEX_SITE_DERPIBOORU : 
 			this.images.addAll(create_db(parsers.parse_db(json))); break;
 		}
 		
-		this.clearDoubles();
+		
+	}
+	
+	public void offloadNotVisible()
+	{
+		
 	}
 	
 	/*
@@ -101,41 +121,41 @@ public class images {
 	{
 		switch (ID)
 		{
-			case constants.__ID_IMAGE_SIZE_FULL:
+			case __ID_IMAGE_SIZE_FULL:
 			{
 				switch (site)
 				{
-					case constants.__INDEX_SITE_DERPIBOORU: return "image";
-					case constants.__INDEX_SITE_IMGUR: return "link";
+					case globals.__INDEX_SITE_DERPIBOORU: return "image";
+					case globals.__INDEX_SITE_IMGUR: return "link";
 				}
 			}
 			
-			case constants.__ID_IMAGE_SIZE_THUMBNAIL:
+			case __ID_IMAGE_SIZE_THUMBNAIL:
 			{
 				switch (site)
 				{
-					case constants.__INDEX_SITE_DERPIBOORU: return "thumb_small";
-					case constants.__INDEX_SITE_IMGUR: return "";
+					case globals.__INDEX_SITE_DERPIBOORU: return "thumb_small";
+					case globals.__INDEX_SITE_IMGUR: return "";
 				}
 			}
 			
 			//move these under sub switches once a new site is added! TODO
-			case constants.__ID_IMAGE_SIZE_WIDTH: return "width";
-			case constants.__ID_IMAGE_SIZE_HEIGHT: return "height";
-			case constants.__ID_IMAGE_SIZE: return (site == constants.__INDEX_SITE_DERPIBOORU ? "" : "size");
-			case constants.__ID_IMAGE_SOURCE: return (site == constants.__INDEX_SITE_DERPIBOORU ? "source_url" : "");
-			case constants.__ID_IMAGE_NAME: return "id";
-			case constants.__ID_IMAGE_DESCRIPTION: return "description";
-			case constants.__ID_IMAGE_TYPE: return (site == constants.__INDEX_SITE_DERPIBOORU ? "mime_type" : "type");
-			case constants.__ID_IMAGE_FAVORITES: return (site == constants.__INDEX_SITE_DERPIBOORU ? "faves" : ""); 
-			case constants.__ID_IMAGE_UPVOTES: return (site == constants.__INDEX_SITE_DERPIBOORU ? "upvotes" : "");
+			case __ID_IMAGE_SIZE_WIDTH: return "width";
+			case __ID_IMAGE_SIZE_HEIGHT: return "height";
+			case __ID_IMAGE_SIZE: return (site == globals.__INDEX_SITE_DERPIBOORU ? "" : "size");
+			case __ID_IMAGE_SOURCE: return (site == globals.__INDEX_SITE_DERPIBOORU ? "source_url" : "");
+			case __ID_IMAGE_NAME: return "id";
+			case __ID_IMAGE_DESCRIPTION: return "description";
+			case __ID_IMAGE_TYPE: return (site == globals.__INDEX_SITE_DERPIBOORU ? "mime_type" : "type");
+			case __ID_IMAGE_FAVORITES: return (site == globals.__INDEX_SITE_DERPIBOORU ? "faves" : ""); 
+			case __ID_IMAGE_UPVOTES: return (site == globals.__INDEX_SITE_DERPIBOORU ? "upvotes" : "");
 		}
 		
 		return null;
 	}
 	
 	@SuppressWarnings("unchecked")
-	public ArrayList<TImage> create_db(ArrayList<Map<String, Object>> values) throws IOException
+	public ArrayList<TImage> create_db(List<Map<String, Object>> values) throws IOException
 	{
 		ArrayList<TImage> list = new ArrayList<TImage>();
 		/*
@@ -148,14 +168,14 @@ public class images {
 		{
 			TImage img = new TImage();
 			
-			img.setName((String) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_NAME)));
-			img.setWidth((long) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_SIZE_WIDTH)));
-			img.setHeight((long) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_SIZE_HEIGHT)));
-			img.setFavorites((long) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_FAVORITES)));
-			img.setSource((String) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_SOURCE)));
-			img.setType((String) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_TYPE)));
-			img.setURL("https:" + (String) values.get(i).get(getID(this.current_site, constants.__ID_IMAGE_SIZE_FULL)));		
-			img.setThumbnail("https:" + (String) ((HashMap<String, Object>) values.get(i).get("representations")).get(getID(this.current_site, constants.__ID_IMAGE_SIZE_THUMBNAIL)));
+			img.setName((String) values.get(i).get(getID(this.current_site, __ID_IMAGE_NAME)));
+			img.setWidth((long) values.get(i).get(getID(this.current_site, __ID_IMAGE_SIZE_WIDTH)));
+			img.setHeight((long) values.get(i).get(getID(this.current_site, __ID_IMAGE_SIZE_HEIGHT)));
+			img.setFaves((long) values.get(i).get(getID(this.current_site, __ID_IMAGE_FAVORITES)));
+			img.setSource((String) values.get(i).get(getID(this.current_site, __ID_IMAGE_SOURCE)));
+			img.setType((String) values.get(i).get(getID(this.current_site, __ID_IMAGE_TYPE)));
+			img.setImage("https:" + (String) values.get(i).get(getID(this.current_site, __ID_IMAGE_SIZE_FULL)));		
+			img.setThumbnailURL("https:" + (String) ((WeakHashMap<String, Object>) values.get(i).get("representations")).get(getID(this.current_site, __ID_IMAGE_SIZE_THUMBNAIL)));
 
 			list.add(img);
 		}
@@ -168,8 +188,8 @@ public class images {
 	{
 		switch (current_site)
 		{
-			case constants.__INDEX_SITE_DERPIBOORU: return "Derpibooru";
-			case constants.__INDEX_SITE_IMGUR: return "Imgur";
+			case globals.__INDEX_SITE_DERPIBOORU: return "Derpibooru";
+			case globals.__INDEX_SITE_IMGUR: return "Imgur";
 		}
 		
 		return null;
@@ -182,17 +202,10 @@ public class images {
 			tiles.getChildren().clear();
 			
 			for (TImage image : images)
-				tiles.getChildren().add(new ImageView(image.URL()));
+				tiles.getChildren().add(new ImageView(image.getImage()));
 		
 			return;
 		}
-		
-		ImageView last = (ImageView) tiles.getChildren().get(tiles.getChildren().size());
-		
-		int index = images.indexOf(last.getImage());
-		
-		if (index != -1)
-			;
 	}
 	
 	public void clear()
@@ -219,8 +232,8 @@ public class images {
 	{
 		switch	(this.current_site)
 		{
-			case constants.__INDEX_SITE_DERPIBOORU: return this.images.get(index).thumbnail();
-			case constants.__INDEX_SITE_IMGUR: return "";
+			case globals.__INDEX_SITE_DERPIBOORU: return this.images.get(index).getThumbnailURL();
+			case globals.__INDEX_SITE_IMGUR: return "";
 		}
 		
 		return null;
@@ -231,16 +244,34 @@ public class images {
 		if (this.images.size() < index)
 			return null;
 		
-		return Arrays.asList((int) this.images.get(index).width(), (int) this.images.get(index).height());
+		return Arrays.asList((int) this.images.get(index).getWidth(), (int) this.images.get(index).getHeight());
 	}
 	
 	public String getImageURL(int index)
 	{
-		return this.images.get(index).URL();
+		return this.images.get(index).getImage();
 	}
 	
 	public void setCurrentSite(int site)
 	{
 		this.current_site = site;
+	}
+
+	public void loadPage(int page) throws IOException, ParseException 
+	{
+		append(connections.getJSON(connections.getSite(globals.__INDEX_SUBSITE_DERPIBOORU_IMAGES) + getPage(page)));
+	}
+	
+	public String getPage(int page) 
+	{
+		switch(current_site)
+		{
+			case globals.__INDEX_SUBSITE_DERPIBOORU_IMAGES:
+			case globals.__INDEX_SUBSITE_DERPIBOORU_SEARCH:
+			case globals.__INDEX_SUBSITE_DERPIBOORU_WATCHED:
+				return "?page=" + String.valueOf(page);
+		}
+		
+		return "";
 	}
 }

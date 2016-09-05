@@ -7,8 +7,9 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -28,7 +29,7 @@ import org.json.simple.parser.ParseException;
 
 public class parsers {
 	
-	private static ArrayList<Object> convert(JSONArray __array)
+	private static List<Object> convert(JSONArray __array)
 	{
 		ArrayList<Object> __values = new ArrayList<Object>();
 		
@@ -58,7 +59,7 @@ public class parsers {
 		if (__object == null)
 			return null;
 		
-		Map<String, Object> __values = new HashMap<String, Object>();
+		Map<String, Object> __values = new WeakHashMap<String, Object>();
 
 		
 		for (Object __key : __object.keySet())
@@ -80,7 +81,10 @@ public class parsers {
 	public static Map<String, Object> parseJSON(InputStream stream) throws IOException, ParseException
 	{
 		JSONParser parser = new JSONParser();
-		JSONObject object = (JSONObject) parser.parse(new InputStreamReader(stream));
+		InputStreamReader reader = new InputStreamReader(stream);
+		JSONObject object = (JSONObject) parser.parse(reader);
+		
+		reader.close();
 		
 		return JSONtoMap(object);
 	}
@@ -111,13 +115,15 @@ public class parsers {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static ArrayList<Map<String, Object>> parse_db(JSONObject object)
+	public static List<Map<String, Object>> parse_db(JSONObject object)
 	{
 		Map<String, Object> __map = JSONtoMap(object);
-		ArrayList<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 		
-		for (Object obj : (ArrayList<Object>) __map.get("images"))
+		for (Object obj : (List<Object>) __map.get("images"))
 			list.add((Map<String, Object>) obj);
+		
+		__map.clear();
 		
 		return list;
 	}
