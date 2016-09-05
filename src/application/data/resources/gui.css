@@ -1,0 +1,139 @@
+/*
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-opacity: 0;
+}
+*/
+#btn_exit, #btn_exit:default:hover:pressed
+{
+	-fx-background-image: url("./images/btn_exit.png");
+	-fx-background-position: center;
+}
+
+#btn_exit:hover
+{
+	-fx-background-image: url("./images/btn_exit_pressed.png");
+}
+
+.grid
+{
+	-fx-background-color: #424242;
+}
+
+.background 
+{
+	-fx-background-color: #424242;
+}
+
+.canvas 
+{
+	-fx-background-color: #424242;
+}
+
+.button 
+{
+	-fx-background-color: #424242; 
+	-fx-text-fill: #FFFFFF; 
+	-fx-background-radius: 0;
+	-fx-border-width: 0;
+	-fx-border-color: #FFFFFF;
+	-fx-padding: 0;
+}
+
+.button:hover
+{
+	-fx-background-color: #000000;
+}
+
+.button:pressed, .button:default:hover:pressed 
+{
+  -fx-background-color: #424242;
+  -fx-text-fill: white;
+}
+
+.text-field
+{
+	-fx-background-radius: 0;
+	-fx-background-color: #c0c0c0;
+}
+
+.pane, .pane:focused
+{
+	-fx-background-color: #424242;
+	-fx-border-width: 0;
+	-fx-text-fill : white;
+	-fx-padding: 0;
+	-fx-focus-color: transparent;
+	-fx-faint-focus-color: transparent;
+}
+
+#ap_main
+{
+	-fx-background-color: #424242;
+	-fx-border-width: 0;
+	-fx-padding: 0 5 5 5;
+}
+
+.menu-button
+{
+	-fx-background-color: #424242;	
+	-fx-text-fill: white;
+}
+
+.menu-button .label
+{
+	-fx-text-fill: white;
+}
+
+.menu-item:focused
+{
+	-fx-background-color: #000000;
+}
+
+.menu-item:focused .label
+{
+	-fx-text-fill: white;
+	-fx-background-color: #000000
+}
+.context-menu 
+{
+    -fx-skin: "com.sun.javafx.scene.control.skin.ContextMenuSkin";
+    -fx-background-color: #424242;
+    -fx-text-fill: white;
+}
+
+.check-box
+{
+	-fx-text-fill: white;
+}
+
+#sp_images
+{
+	-fx-border-radius: 0;
+	-fx-border-width: 0;
+	-fx-padding: 0;
+	-fx-focus-color: transparent;
+}
+
+#sp_images:focused
+{
+	-fx-border-radius: 0;
+	-fx-border-width: 0;
+	-fx-focus-color: transparent;
+	-fx-faint-focus-color: transparent;
+}
+
+#tp_images
+{
+	-fx-background-color: #424242;
+	-fx-border-radius: 0;
+	-fx-border-width: 0;
+	-fx-focus-color: transparent;
+	-fx-faint-focus-color: transparent;
+}
+
+.label
+{
+	-fx-background-color: #424242;
+	-fx-text-fill: white;
+	-fx-padding: 0;
+}
