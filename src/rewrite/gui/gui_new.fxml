@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.image.*?>
+<?import javafx.scene.input.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane fx:id="ap_main" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="430.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1" fx:controller="rewrite.gui.controller_main">
+   <children>
+      <GridPane prefHeight="50.0" prefWidth="600.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
+        <columnConstraints>
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+        </columnConstraints>
+        <rowConstraints>
+          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+        </rowConstraints>
+         <children>
+            <AnchorPane prefHeight="200.0" prefWidth="200.0">
+               <children>
+                  <Button layoutX="75.0" layoutY="24.0" mnemonicParsing="false" onAction="#focus" text="Images" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+            <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1">
+               <children>
+                  <Button disable="true" layoutX="32.0" layoutY="13.0" mnemonicParsing="false" onAction="#focus" text="Watched" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+            <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="2">
+               <children>
+                  <Button disable="true" layoutX="32.0" layoutY="24.0" mnemonicParsing="false" onAction="#focus" text="Filters" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+            <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="4">
+               <children>
+                  <MenuButton alignment="CENTER" layoutX="11.0" layoutY="13.0" mnemonicParsing="false" text="Menu" textAlignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <items>
+                        <MenuItem fx:id="mi_account" mnemonicParsing="false" onAction="#focus" text="Account" />
+                        <MenuItem fx:id="mi_settings" mnemonicParsing="false" onAction="#focus" text="Settings" />
+                        <MenuItem fx:id="mi_switch" mnemonicParsing="false" onAction="#focus" text="Switch site" />
+                        <MenuItem fx:id="mi_exit" mnemonicParsing="false" onAction="#exit" text="Exit" />
+                     </items>
+                  </MenuButton>
+               </children>
+            </AnchorPane>
+            <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="3">
+               <children>
+                  <Button layoutX="14.0" layoutY="13.0" mnemonicParsing="false" onAction="#focus" text="Search" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+         </children>
+      </GridPane>
+      <AnchorPane layoutY="50.0" prefHeight="350.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="75.0">
+         <children>
+            <AnchorPane fx:id="lr_images" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <children>
+                  <ScrollPane fx:id="sp_images" fitToHeight="false" fitToWidth="true" layoutY="25.0" prefHeight="325.0" prefWidth="600.0" vbarPolicy="ALWAYS" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
+                     <content>
+                     	<TilePane fx:id="tp_images" hgap="2.0" prefHeight="200.0" prefTileHeight="150.0" prefTileWidth="150.0" prefWidth="200.0" vgap="2.0" onMouseClicked="#showFull"/>
+                     </content>
+                  </ScrollPane>
+                  <Button disable="true" layoutY="2.0" mnemonicParsing="false" prefWidth="50.0" text="Button" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                  <Button disable="true" layoutX="52.0" layoutY="2.0" mnemonicParsing="false" prefWidth="50.0" text="Button" AnchorPane.leftAnchor="50.0" AnchorPane.topAnchor="0.0" />
+                  <Button disable="true" layoutX="104.0" layoutY="2.0" mnemonicParsing="false" prefWidth="50.0" text="Button" AnchorPane.leftAnchor="100.0" AnchorPane.topAnchor="0.0" />
+                  <Button disable="true" layoutX="156.0" layoutY="2.0" mnemonicParsing="false" prefWidth="50.0" text="Button" AnchorPane.leftAnchor="150.0" AnchorPane.topAnchor="0.0" />
+                  <Button fx:id="btn_mark" layoutX="521.0" maxHeight="25.0" maxWidth="100.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0" text="Mark" AnchorPane.rightAnchor="100.0" AnchorPane.topAnchor="0.0" />
+                  <Button fx:id="btn_download" layoutX="450.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0" text="Download" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                  <Label fx:id="lbl_selected" layoutX="198.0" prefHeight="25.0" prefWidth="202.0" AnchorPane.leftAnchor="198.0" AnchorPane.rightAnchor="200.0" />
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="lr_filters" disable="true" prefHeight="200.0" prefWidth="200.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+            <AnchorPane fx:id="lr_account" disable="true" layoutX="10.0" layoutY="10.0" prefHeight="200.0" prefWidth="200.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+            <AnchorPane fx:id="lr_search" disable="true" layoutX="10.0" layoutY="10.0" prefHeight="200.0" prefWidth="200.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <children>
+                  <AnchorPane layoutY="25.0" prefHeight="326.0" prefWidth="600.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
+                     <children>
+                        <TextField prefHeight="25.0" prefWidth="480.0" promptText="Searchable tags here, separated by commas (varies with site-to-site)" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="120.0" AnchorPane.topAnchor="0.0" />
+                        <Button layoutX="480.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="120.0" text="Search" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                        <TilePane fx:id="tp_search" layoutY="25.0" prefHeight="301.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0" />
+                     </children>
+                  </AnchorPane>
+                  <Button layoutY="2.0" mnemonicParsing="false" prefWidth="50.0" text="Button" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                  <Button layoutX="52.0" layoutY="2.0" mnemonicParsing="false" prefWidth="50.0" text="Button" AnchorPane.leftAnchor="150.0" AnchorPane.topAnchor="0.0" />
+                  <Button layoutX="104.0" layoutY="2.0" mnemonicParsing="false" prefWidth="50.0" text="Button" AnchorPane.leftAnchor="50.0" AnchorPane.topAnchor="0.0" />
+                  <Button layoutX="156.0" layoutY="2.0" mnemonicParsing="false" prefWidth="50.0" text="Button" AnchorPane.leftAnchor="100.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="lr_settings" disable="true" prefHeight="350.0" prefWidth="600.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <children>
+                  <CheckBox layoutX="14.0" layoutY="14.0" mnemonicParsing="false" text="Double click to open image fullscreen" />
+                  <CheckBox layoutX="14.0" layoutY="31.0" mnemonicParsing="false" text="Something" />
+                  <CheckBox fx:id="cb_custom_folder" layoutX="14.0" layoutY="132.0" mnemonicParsing="false" text="Use custom download folder" />
+                  <Button fx:id="btn_st_browse" disable="true" layoutX="300.0" layoutY="175.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="73.0" text="Browse" />
+                  <TextField fx:id="tf_directory_location" disable="true" layoutX="14.0" layoutY="175.0" prefHeight="25.0" prefWidth="287.0" />
+                  <Label layoutX="14.0" layoutY="158.0" prefHeight="17.0" prefWidth="287.0" text="Download directory" />
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="lr_pageswitch" prefHeight="350.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <children>
+                  <TilePane prefHeight="350.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+         </children></AnchorPane>
+      <AnchorPane fx:id="ap_title" layoutX="-69.0" layoutY="-86.0" prefHeight="25.0" prefWidth="600.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <Label fx:id="lbl_title" layoutY="4.0" prefHeight="25.0" prefWidth="403.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="197.0" AnchorPane.topAnchor="0.0" />
+            <Button fx:id="btn_exit" layoutX="570.0" maxHeight="25.0" maxWidth="30.0" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#exit" prefHeight="25.0" prefWidth="30.0" text="X" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+            <Button fx:id="btn_fullscreen" layoutX="540.0" maxHeight="25.0" maxWidth="30.0" mnemonicParsing="false" onAction="#setFullscreen" prefHeight="25.0" prefWidth="30.0" text="" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="0.0" />
+            <Button fx:id="btn_minimize" layoutX="510.0" maxHeight="25.0" maxWidth="30.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="30.0" text="_" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="60.0" AnchorPane.topAnchor="0.0" />
+         </children>
+      </AnchorPane>
+   </children>
+</AnchorPane>
