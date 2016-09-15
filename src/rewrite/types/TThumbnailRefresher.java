@@ -1,5 +1,12 @@
 package rewrite.types;
 
+/*
+ *   TODO:
+ *   	- Make this into constantly updating (whenever we scroll, so that we don't need to continuesly create a new one)
+ *   		- This should be easy, but where should we put the wait?
+ *  	
+ */
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -7,6 +14,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.BoundingBox;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
@@ -19,7 +29,10 @@ public class TThumbnailRefresher implements Runnable
 	private static TThumbnailRefresher __self = new TThumbnailRefresher();
 	private TTileManager manager;
 	private List<Node> hidden, showing;
-
+	private boolean stop = false;
+	private DoubleProperty scrollPosition;
+	private ChangeListener<Number> __listener;
+	
 	public static TThumbnailRefresher instance()
 	{
 		return __self;
@@ -31,9 +44,21 @@ public class TThumbnailRefresher implements Runnable
 		this.showing = new ArrayList<Node>();
 	}
 
-	public void bind(TTileManager manager)
+	public void bind(TTileManager manager, DoubleProperty doubleProperty)
 	{
 		this.manager = manager;
+		this.scrollPosition = doubleProperty;
+		
+		__listener = new ChangeListener<Number>()
+		{
+
+			@Override
+			public synchronized void changed(ObservableValue<? extends Number> arg0, Number arg1, Number arg2) {
+				notify();
+			}
+		};
+
+		scrollPosition.addListener(__listener);
 	}
 	
 	public boolean inViewport(ScrollPane viewport, TilePane pane, Node node)
@@ -52,7 +77,7 @@ public class TThumbnailRefresher implements Runnable
 			((ImageView) node).setImage(null);
 	}
 	
-	private void scan()
+	public void scan()
 	{
 		System.out.println("Refresher - Scanning");
 		
@@ -74,6 +99,9 @@ public class TThumbnailRefresher implements Runnable
 			if (!hidden && ((ImageView) node).getImage() != null)
 				continue;
 			
+			if (hidden && ((ImageView) node).getImage() == null)
+				continue;
+			
 			if (hidden)
 				this.hidden.add(node);
 			else
@@ -92,7 +120,7 @@ public class TThumbnailRefresher implements Runnable
 		
 		List<Future<Image>> images = new ArrayList<Future<Image>>();
 		for (int i = 0; i < nodes.size(); i++)
-			images.add(executor.submit(new TImageLoader(manager.getContainerByNode(nodes.get(i)), "thumb_small")));
+			images.add(executor.submit(new TImageLoader(manager.getContainerByNode(nodes.get(i)).getImage(), "thumb_small")));
 
 		for (int i = 0; i < nodes.size(); i++)
 			try {
@@ -106,16 +134,39 @@ public class TThumbnailRefresher implements Runnable
 		executor.shutdown();
 	}
 
+	public void stop()
+	{
+		this.stop = true;
+	}
 	
 	@Override
-	public synchronized void run() 
+	public void run() 
 	{
-		scan();
+
 		
-		System.out.println("Refresher - Amount of tiles showing(previously hidden): " + this.showing.size());
-		System.out.println("Refresher - Amount of tiles hidden(previously showing): " + this.hidden.size());
-		
-		load(this.showing);
-		release(this.hidden);
+		while (!stop)
+		{
+			System.out.println("Scroll position: " + scrollPosition.doubleValue());
+
+			scan();
+			
+			System.out.println("Refresher - Amount of tiles showing(previously hidden): " + this.showing.size());
+			System.out.println("Refresher - Amount of tiles hidden(previously showing): " + this.hidden.size());
+			
+			load(this.showing);
+			release(this.hidden);
+			
+			try {
+				synchronized (__listener) {
+					__listener.wait();
+				}
+
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			System.out.println("Refresher was notified.");
+		}
 	}
 }

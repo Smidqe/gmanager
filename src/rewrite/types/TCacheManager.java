@@ -1,9 +1,10 @@
 package rewrite.types;
 
+import java.io.Serializable;
 import java.util.List;
 
 @SuppressWarnings("unused") //this is here for now until I finish this class
-public class TCacheManager implements Runnable
+public class TCacheManager 
 {
 	private static volatile TCacheManager instance = new TCacheManager();
 	private String path;
@@ -15,12 +16,19 @@ public class TCacheManager implements Runnable
 		// TODO Auto-generated constructor stub
 	}
 	
-	public <T> void save(List<T> objects)
+	public <T extends Serializable> void save(List<T> objects)
 	{
+		for (T obj : objects)
+			save(obj);
+	}
+	
+	public <T extends Serializable> void save(T object)
+	{
+		
 		
 	}
 	
-	public <T> boolean isOnCache(String id)
+	public boolean isOnCache(String id)
 	{
 		boolean found = false;
 		
@@ -40,9 +48,4 @@ public class TCacheManager implements Runnable
 		return instance;
 	}
 
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		
-	}
 }

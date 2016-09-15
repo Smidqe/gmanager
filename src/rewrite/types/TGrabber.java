@@ -24,6 +24,7 @@ public class TGrabber implements Callable<List<TImageContainer>>
 	
 	private TGrabber() 
 	{
+		this.url = null;
 	}
 
 	public void setURL(URL url)
@@ -38,16 +39,15 @@ public class TGrabber implements Callable<List<TImageContainer>>
 
 	@Override
 	public List<TImageContainer> call() throws Exception {
+		ExecutorService __executor = Executors.newCachedThreadPool();
+		
 		try {
 			if (!connections.ping(this.url).equals("200"))
 				return null;
 			
 			JSONObject object = connections.getJSON(this.url.toString());
-			TParser __parser = new TParser(object);
-			
-			ExecutorService __executor = Executors.newCachedThreadPool();
-			
-			Future<List<Map<String, Object>>> result = __executor.submit(__parser);
+
+			Future<List<Map<String, Object>>> result = __executor.submit(new TParser(object));
 			List<Map<String, Object>> list = result.get();
 			
 			List<Future<TImage>> images = new ArrayList<Future<TImage>>();
@@ -75,6 +75,7 @@ public class TGrabber implements Callable<List<TImageContainer>>
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
+			__executor.shutdown();
 		}
 		
 		return null;

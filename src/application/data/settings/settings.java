@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 import application.data.resources.globals.globals;
 import libFileExtensions.files.TFile;
-import libFileExtensions.files.TIni;
+import libFileExtensions.files.TIniFile;
 import libFileExtensions.folders.TFolder;
 
 @SuppressWarnings("unused")
@@ -36,7 +36,7 @@ public class settings {
 	public String pDownloadPath = null;
 	
 	private static settings __self = new settings();
-	public TIni images, settings, sites;
+	public TIniFile images, settings, sites;
 	public TFolder cache;
 	private globals constants;
 	
@@ -44,9 +44,9 @@ public class settings {
 	{
 		try 
 		{
-			this.settings = new TIni("src/application/data/resources/config/settings.ini", false);
-			this.images = new TIni("src/application/data/resources/config/images.ini", false);
-			this.sites = new TIni("src/application/data/resources/config/sites.ini", false);
+			this.settings = new TIniFile("src/application/data/resources/config/settings.ini", false);
+			this.images = new TIniFile("src/application/data/resources/config/images.ini", false);
+			this.sites = new TIniFile("src/application/data/resources/config/sites.ini", false);
 		
 			this.settings.information();
 			this.images.information();
@@ -61,7 +61,7 @@ public class settings {
 		}
 	}
 
-	public TIni getIni(int fileID)
+	public TIniFile getIni(int fileID)
 	{
 		switch (fileID)
 		{
@@ -75,7 +75,7 @@ public class settings {
 
 	public String getIniID(int fileID, String section, String ID)
 	{
-		TIni file;
+		TIniFile file;
 		if ((file = getIni(fileID)) == null)
 			return null;
 				

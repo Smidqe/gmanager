@@ -3,9 +3,9 @@ package rewrite.types;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 public class TSite 
 {
@@ -17,9 +17,9 @@ public class TSite
 	
 	public TSite()
 	{
-		this.IDs = new HashMap<String, String>();
+		this.IDs = new WeakHashMap<String, String>();
 		this.skippables = new ArrayList<String>();
-		this.urls = new HashMap<String, URL>();
+		this.urls = new WeakHashMap<String, URL>();
 	}
 	
 	public void setURL(String name, URL url) throws MalformedURLException
@@ -27,6 +27,11 @@ public class TSite
 		this.urls.put(name, url);
 	}
 
+	public void setSkippable(String ID)
+	{
+		this.skippables.add(ID);
+	}
+	
 	public synchronized void setID(String key, String value)
 	{
 		this.IDs.put(key, value);

@@ -18,7 +18,6 @@ public class TThumbnailUpdater implements Runnable{
 	private boolean useCache;
 	private ArrayList<TImageContainer> containers;
 	
-	private TCache cache;
 	private ScrollPane viewport;
 	private TilePane tiles;
 	
@@ -27,7 +26,6 @@ public class TThumbnailUpdater implements Runnable{
 		this.containers = new ArrayList<TImageContainer>();
 	
 		this.interrupted = false;
-		this.cache = TCache.instance();
 		this.useCache = false;
 	}
 	
@@ -54,7 +52,8 @@ public class TThumbnailUpdater implements Runnable{
 				return;
 			
 			if (this.useCache)
-				container.getImage().setThumbnail((Image) cache.get(container.getImage().getID()));
+				//container.getImage().setThumbnail((Image) cache.get(container.getImage().getID()));
+				;
 			else
 			{
 				try {

@@ -8,7 +8,8 @@ package rewrite.gui;
 		- Overall clean this controller (not a priority)
 		- 
 
-
+		R2 TODO:
+			- Simplify (if possible)
  */
 
 import java.net.*;
@@ -16,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,8 +29,6 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Service;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -51,7 +52,8 @@ import rewrite.types.TManager;
 import rewrite.types.TThumbnailRefresher;
 import rewrite.types.TTileManager;
 
-public class controller_main implements Initializable{ //change name once first version is ready.
+public class controller_main implements Initializable
+{ //change name once first version is ready.
 	public static final int __INDEX_LAYER_IMAGES = 0;
 	public static final int __INDEX_LAYER_FILTERS = 1;
 	public static final int __INDEX_LAYER_SEARCH = 2;
@@ -206,6 +208,8 @@ public class controller_main implements Initializable{ //change name once first 
 	@FXML
 	private void exit(ActionEvent e)
 	{
+		__executor.shutdown();
+		
 		Platform.exit();
 	}
 
@@ -335,7 +339,33 @@ public class controller_main implements Initializable{ //change name once first 
 		if (cursor.equals(Cursor.E_RESIZE) || cursor.equals(Cursor.NE_RESIZE) || cursor.equals(Cursor.SE_RESIZE))
 			scene.getWindow().setWidth(event.getSceneX());
 	}
-
+	
+	@SuppressWarnings("unused")
+	private List<Integer> getMaxTilesInViewport(ScrollPane parent, TilePane tiles)
+	{
+		List<Integer> values = new ArrayList<Integer>(2);
+		
+		values.set(0, (int) (parent.getViewportBounds().getWidth() / tiles.getTileWidth()));
+		values.set(1, (int) (parent.getViewportBounds().getWidth() / tiles.getTileWidth()));
+		
+		return values;
+	}
+	@SuppressWarnings("unused")
+	private void fillUntilLimit()
+	{
+		
+	}
+	
+	@SuppressWarnings("unused")
+	private void refresh()
+	{
+		/*
+		 	TODO:
+		 		- Create a new refreshing method that can be eventually moved to the TThumbnailRefresher class
+		 		- Will be used in conjuction with the new resize listener.
+		 */
+	}
+	
 	@Override
 	public synchronized void initialize(URL arg0, ResourceBundle arg1) 
 	{	
@@ -348,11 +378,11 @@ public class controller_main implements Initializable{ //change name once first 
 		
 		__manager = TManager.getInstance();
 		__tiles = __manager.getTileManager();
-		//__cache = __manager.getCacheManager();
 		__grabber = TGrabber.instance();
 		__grabber.setURL(__manager.getSite().getURL("images"));
 		__refresher = TThumbnailRefresher.instance();
-		__refresher.bind(__tiles);
+		__refresher.bind(__tiles, sp_images.vvalueProperty());
+		__tiles.bind(tp_images, sp_images);
 		
 		btn_fullscreen.setOnMousePressed(new EventHandler<MouseEvent>() {
 
@@ -405,19 +435,38 @@ public class controller_main implements Initializable{ //change name once first 
 			
 		});
 		
-		Service<Void> service = new Service<Void>(){
-
+		final ChangeListener<Number> listener = new ChangeListener<Number>()
+		{
+			final Timer timer = new Timer();
+			TimerTask task = null;
+			final long delay = 200;
+			
 			@Override
-			protected Task<Void> createTask() {
+			public void changed(ObservableValue<? extends Number> arg0, Number arg1, Number arg2) {
 				// TODO Auto-generated method stub
-				return null;
-			}};
-		Task<Void> thumbnailrefresher = new Task<Void>() {
-
-			@Override
-			protected Void call() throws Exception {
-				return null;
-			}};
+				
+				if (task != null)
+					task.cancel();
+				
+				task = new TimerTask()
+				{
+					@Override
+					public void run() 
+					{
+						/*
+						 	TODO:
+						 		- Finalize this by notifying the refresher
+						 			- Prob: Find a way to notify the thread through this class.
+						 */
+					}
+				};
+				
+				timer.schedule(task, delay);
+			}
+		};
+		
+		ap_main.widthProperty().addListener(listener);
+		ap_main.heightProperty().addListener(listener);
 		
 		sp_images.vvalueProperty().addListener(new ChangeListener<Number>(){
 
@@ -426,12 +475,12 @@ public class controller_main implements Initializable{ //change name once first 
 			{
 				System.out.println("Thread: " + Thread.currentThread().getName());
 				System.out.println("FX - Number of tiles: " + tp_images.getChildren().size());
-				__executor.submit(__refresher);
+				//__executor.submit(__refresher);
 				
 				if (valueNew.doubleValue() == 1.0 /*&& __settings.getBoolean("bAutomaticPaging")*/)
 				{
 					try {
-						__grabber.setURL(__manager.getSite().getURL("images", "?page=", page++));
+						__grabber.setURL(__manager.getSite().getURL("images", "?page=", ++page));
 						__tiles.add(__executor.submit(__grabber).get());
 					} catch (InterruptedException | ExecutionException e) {
 						// TODO Auto-generated catch block
@@ -452,8 +501,13 @@ public class controller_main implements Initializable{ //change name once first 
 			mode(pane, false);
 		
 		mode(__layers.get(0), true);
-
-		__tiles.bind(tp_images, sp_images);
-		__executor.submit(__refresher);	
+		__grabber.setURL(__manager.getSite().getURL("images", "?page=", page));
+		try {
+			__tiles.add(__executor.submit(__grabber).get());
+		} catch (InterruptedException | ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		__executor.submit(__refresher);
 	}
 }

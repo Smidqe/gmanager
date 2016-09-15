@@ -14,7 +14,7 @@ public class strings {
 		return all ? (values.size() == matches) : matches > 0;
 	}
 	
-	public static <T> List<String> parse(List<T> list)
+	public static <T> List<String> toArray(List<T> list)
 	{	
 		List<String> parsed = new ArrayList<String>();
 		

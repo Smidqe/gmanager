@@ -5,7 +5,6 @@ import java.util.List;
 
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.TilePane;
 
 public class TTileManager 
@@ -29,36 +28,25 @@ public class TTileManager
 	
 	public synchronized void add(TImageContainer image)
 	{
-		this.images.add(image);
-
-		System.out.println(Thread.currentThread().getName() + " - Added image to list");
-		
-		
 		if (image.getContainer() == null)
+		{
 			System.out.println(Thread.currentThread().getName() + " - Null imageview");
+			return;
+		}
 		
-		List<ImageView> views = new ArrayList<ImageView>();
-		views.add(image.getContainer());
-		System.out.println(Thread.currentThread().getName() + " - Testing");
-
-		this.pane.getChildren().addAll(views);
+		this.images.add(image);
+		this.pane.getChildren().addAll(image.getContainer());
 		
-		System.out.println(Thread.currentThread().getName() + " - Added image to tiles");
+		notify();
 	}
 	
 	public synchronized void add(List<TImageContainer> list)
 	{
-		System.out.println(Thread.currentThread().getName() + " - Beginning to add values");
-		
 		if (list == null)
 			throw new NullPointerException();
-		
-		System.out.println(Thread.currentThread().getName() + " - Start of an loop");
 
 		for (TImageContainer container : list)
 			add(container);
-		
-		System.out.println(Thread.currentThread().getName() + " - Done adding values");
 
 		notify();
 	}

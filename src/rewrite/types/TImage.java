@@ -9,8 +9,9 @@ import java.util.concurrent.Executors;
 
 import application.types.TIDCreator;
 
-public class TImage implements Serializable{
-	public enum enum_map{MAP_PROPERTIES, MAP_IMAGES};
+public class TImage implements Serializable
+{
+	public enum enum_map {MAP_PROPERTIES, MAP_IMAGES};
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -23,21 +24,22 @@ public class TImage implements Serializable{
 		this.images = new HashMap<String, String>();
 	}
 	
-	public Map<String, String> getProperties(enum_map map)
+	public Map<String, String> getMap(enum_map map)
 	{
-		
 		if (map == enum_map.MAP_PROPERTIES)
 			return properties;
 		else
 			return images;
 	}
 	
+	public Map<String, String> getProperties(enum_map map)
+	{
+		return getMap(map);
+	}
+	
 	public synchronized String getProperty(enum_map map, String key)
 	{
-		if (map == enum_map.MAP_PROPERTIES)
-			return properties.get(key);
-		else
-			return images.get(key);
+		return getMap(map).get(key);
 	}
 	
 	public synchronized void setProperty(enum_map map, String key, String value)

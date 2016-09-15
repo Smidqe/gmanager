@@ -65,5 +65,13 @@ public class arrays {
 		return list;
 	}
 	
-	
+	public static <T> List<T> remove(List<T> list, List<Integer> indexes)
+	{
+		indexes.sort((a, b) -> Integer.compare(a, b)); //a simple quicksort (or whatever the java uses), 
+		
+		for (int i = indexes.size(); i == 0;)
+			list.remove(i);
+		
+		return list;
+	}
 }

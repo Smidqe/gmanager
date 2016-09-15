@@ -5,13 +5,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import libFileExtensions.files.TFile;
+import libFileExtensions.files.TBinaryFile;
 
-public class TCacheFile extends TFile{
+public class TCacheFile extends TBinaryFile{
 	private static final long serialVersionUID = 1255846491775200168L;
 	private String UUID;
-	
-	
+
 	public TCacheFile(String pathname, boolean create) throws IOException {
 		super(pathname, create);
 		// TODO Auto-generated constructor stub
@@ -29,23 +28,26 @@ public class TCacheFile extends TFile{
 	
 	public void write(Object object) throws FileNotFoundException, IOException
 	{
-		ObjectOutputStream stream = new ObjectOutputStream(this.openOutput(true));
+		if (object == null)
+			return;
+		
+		ObjectOutputStream stream = new ObjectOutputStream(this.output(true));
 		
 		stream.writeObject(object);
 		stream.close();
 		
-		this.closeOutput();
+		this.close();
 	}
 	
 	public Object get() throws ClassNotFoundException, IOException
 	{
-		ObjectInputStream stream = new ObjectInputStream(this.openInput());
+		ObjectInputStream stream = new ObjectInputStream(this.input());
 		
 		Object object = null;
 		object = stream.readObject();
 	
 		stream.close();
-		this.closeInput();
+		this.close();
 		
 		return object;
 	}

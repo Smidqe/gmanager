@@ -21,6 +21,7 @@ public class TManager
 		this.site = new TSite();
 		try {
 			//this site is temporary and will be used for development/debugging
+			//normally it would load necessary information from ini files.
 			this.site.setURL("images", new URL("https://derpibooru.org/images.json"));
 			this.tileManager = TTileManager.instance();
 			this.cacheManager = TCacheManager.instance();

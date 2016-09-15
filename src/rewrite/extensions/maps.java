@@ -23,6 +23,10 @@ public class maps
 	
 	public static <K, V> Map<K, V> move(Map<K, V> from, Map<K, V> to, K key)
 	{
-		return null;
+		to.put(key, from.get(key));
+		
+		return to;
 	}
+	
+	
 }
