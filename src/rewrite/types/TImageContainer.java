@@ -53,10 +53,10 @@ public class TImageContainer implements Serializable{
 		if (this.image == null || this.container == null)
 			return;
 		
-		System.out.println("Arming");
+		//System.out.println("Arming");
 		
 		if (show)
-			this.container.setImage(Executors.newSingleThreadExecutor().submit(new TImageLoader(this.image, "thumbnail")).get());
+			this.container.setImage(Executors.newSingleThreadExecutor().submit(new TImageLoader(this.image, size)).get().get(0));
 		else
 			this.container.setImage(null);
 

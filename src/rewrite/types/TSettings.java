@@ -7,6 +7,8 @@ public class TSettings
 {
 	
 	private Map<String, String> settings;
+	private Map<String, String> paths;
+	
 	private static TSettings self = new TSettings();
 	
 	public synchronized static TSettings instance()
@@ -33,4 +35,11 @@ public class TSettings
 	{
 		return Integer.getInteger(this.settings.get(key));
 	}
+	
+	public synchronized Map<String, String> getPaths()
+	{
+		return this.paths;
+	}
+	
+	//add rest of the functions later.
 }

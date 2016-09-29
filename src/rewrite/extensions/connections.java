@@ -13,11 +13,6 @@ import java.net.*;
 import java.util.Arrays;
 
 public class connections {
-	public connections()
-	{
-		
-	}
-	
 	public static String ping(String site) throws MalformedURLException, IOException
 	{
 		String value = null;
@@ -62,5 +57,20 @@ public class connections {
 	public static String ping(URL url) throws MalformedURLException, IOException 
 	{
 		return ping(url.toString());
+	}
+
+	public static JSONObject getJSON(URL url) throws IOException, ParseException 
+	{
+		if (url == null)
+			return null;
+		
+		if (!url.toString().contains(".json"))
+			return null;
+		
+		InputStreamReader __reader = new InputStreamReader(url.openStream());
+		JSONObject json = (JSONObject) new JSONParser().parse(__reader);
+		__reader.close();
+		
+		return json;
 	}
 }

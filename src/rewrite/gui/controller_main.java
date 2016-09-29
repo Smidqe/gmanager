@@ -19,9 +19,10 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,10 +48,12 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.TilePane;
 import javafx.stage.Screen;
 import javafx.stage.Window;
+
 import rewrite.types.TGrabber;
 import rewrite.types.TManager;
 import rewrite.types.TThumbnailRefresher;
 import rewrite.types.TTileManager;
+import rewrite.types.queues.TRefresherQueue;
 
 public class controller_main implements Initializable
 { //change name once first version is ready.
@@ -79,6 +82,8 @@ public class controller_main implements Initializable
 	private TTileManager __tiles;
 	private TGrabber __grabber;
 	private TThumbnailRefresher __refresher;
+	private TRefresherQueue __refresher_queue;
+	private BlockingDeque<String> __grabber_deque;
 	
 	private Node current_pane;
 	
@@ -310,7 +315,7 @@ public class controller_main implements Initializable
 		
 		Cursor cursor = scene.getCursor();
 		double modifier = 0;
-		
+
 		if (cursor.equals(Cursor.N_RESIZE) || cursor.equals(Cursor.NW_RESIZE) || cursor.equals(Cursor.NE_RESIZE))
 		{
 			if (event.getSceneY() < 0)
@@ -369,20 +374,25 @@ public class controller_main implements Initializable
 	@Override
 	public synchronized void initialize(URL arg0, ResourceBundle arg1) 
 	{	
+		__grabber_deque = new LinkedBlockingDeque<String>();
 		__executor = Executors.newCachedThreadPool(r -> {
 	        Thread t = new Thread(r);
+	        
+	        t.setName("Thread: FX-Executor" + r.getClass().getClass().getTypeName());
 	        t.setDaemon(true);
 	        return t;
 	    });
-
+		
 		
 		__manager = TManager.getInstance();
 		__tiles = __manager.getTileManager();
 		__grabber = TGrabber.instance();
-		__grabber.setURL(__manager.getSite().getURL("images"));
 		__refresher = TThumbnailRefresher.instance();
-		__refresher.bind(__tiles, sp_images.vvalueProperty());
-		__tiles.bind(tp_images, sp_images);
+		__refresher.bind(__tiles);
+		__refresher_queue = TRefresherQueue.instance();
+		__refresher.setDeque(TRefresherQueue.instance().getDeque());
+		__tiles.bind(tp_images, sp_images, TRefresherQueue.instance().getDeque());
+		__grabber.bind(__tiles, __grabber_deque);
 		
 		btn_fullscreen.setOnMousePressed(new EventHandler<MouseEvent>() {
 
@@ -453,11 +463,14 @@ public class controller_main implements Initializable
 					@Override
 					public void run() 
 					{
-						/*
-						 	TODO:
-						 		- Finalize this by notifying the refresher
-						 			- Prob: Find a way to notify the thread through this class.
-						 */
+						System.out.println("Hello.");
+						
+						try {
+							__refresher_queue.put("");
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
 				};
 				
@@ -473,21 +486,20 @@ public class controller_main implements Initializable
 			@Override
 			public synchronized void changed(ObservableValue<? extends Number> arg0, Number arg1, Number valueNew) 
 			{
-				System.out.println("Thread: " + Thread.currentThread().getName());
-				System.out.println("FX - Number of tiles: " + tp_images.getChildren().size());
-				//__executor.submit(__refresher);
+				try {
+					__refresher_queue.put("");
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				
 				if (valueNew.doubleValue() == 1.0 /*&& __settings.getBoolean("bAutomaticPaging")*/)
-				{
 					try {
-						__grabber.setURL(__manager.getSite().getURL("images", "?page=", ++page));
-						__tiles.add(__executor.submit(__grabber).get());
-					} catch (InterruptedException | ExecutionException e) {
+						__grabber.setURL(__manager.getSite().getURL("images", "?page=", ++page), true);
+					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					
-				}
 			}		
 			
 		});
@@ -501,13 +513,13 @@ public class controller_main implements Initializable
 			mode(pane, false);
 		
 		mode(__layers.get(0), true);
-		__grabber.setURL(__manager.getSite().getURL("images", "?page=", page));
 		try {
-			__tiles.add(__executor.submit(__grabber).get());
-		} catch (InterruptedException | ExecutionException e) {
+			__grabber.setURL(__manager.getSite().getURL("images", "?page=", page), false);
+		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		__executor.submit(__refresher);
+		__executor.submit(__grabber);
 	}
 }

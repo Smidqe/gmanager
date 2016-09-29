@@ -17,6 +17,9 @@ public class arrays {
 	
 	public static <T> List<T> add(List<T> list, T object)
 	{
+		if (list == null || object == null)
+			throw new NullPointerException();
+		
 		return add(list, object, true);
 	}
 	
@@ -71,6 +74,16 @@ public class arrays {
 		
 		for (int i = indexes.size(); i == 0;)
 			list.remove(i);
+		
+		return list;
+	}
+	
+	public static <T> List<T> swap(List<T> list, int from, int to)
+	{
+		T tmp = list.get(to);
+		
+		list.set(to, list.get(from));
+		list.set(from, tmp);
 		
 		return list;
 	}

@@ -1,6 +1,8 @@
 package rewrite.types;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("unused") //this is here for now until I finish this class
@@ -13,18 +15,26 @@ public class TCacheManager
 	
 	public TCacheManager() 
 	{
-		// TODO Auto-generated constructor stub
+		this.files = new ArrayList<TCacheFile>();
 	}
 	
-	public <T extends Serializable> void save(List<T> objects)
+	public <T extends Serializable> void save(List<T> objects) throws IOException
 	{
 		for (T obj : objects)
 			save(obj);
 	}
 	
-	public <T extends Serializable> void save(T object)
+	public <T extends Serializable> void save(T object) throws IOException
 	{
+		/*
+		path = settings.getCachePath(); 
+		 
+		 
+		 
+		 */
 		
+		TCacheFile file = new TCacheFile(path, true);
+	
 		
 	}
 	

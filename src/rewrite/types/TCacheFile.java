@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 import libFileExtensions.files.TBinaryFile;
 
@@ -26,7 +27,7 @@ public class TCacheFile extends TBinaryFile{
 		return this.exists();
 	}
 	
-	public void write(Object object) throws FileNotFoundException, IOException
+	public <T extends Serializable> void write(T object) throws FileNotFoundException, IOException
 	{
 		if (object == null)
 			return;
@@ -39,12 +40,13 @@ public class TCacheFile extends TBinaryFile{
 		this.close();
 	}
 	
-	public Object get() throws ClassNotFoundException, IOException
+	@SuppressWarnings("unchecked")
+	public <T extends Serializable> T get() throws ClassNotFoundException, IOException
 	{
 		ObjectInputStream stream = new ObjectInputStream(this.input());
 		
-		Object object = null;
-		object = stream.readObject();
+		T object = null;
+		object = (T) stream.readObject();
 	
 		stream.close();
 		this.close();

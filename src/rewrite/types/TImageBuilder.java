@@ -9,7 +9,7 @@ import java.util.concurrent.Callable;
 import rewrite.extensions.strings;
 import rewrite.types.TImage.enum_map;
 
-public class TImageBuilder<T> implements Callable<TImage>{
+public class TImageBuilder implements Callable<TImage>{
 
 	private Map<String, Object> information;
 	private List<String> skippable;
@@ -32,7 +32,6 @@ public class TImageBuilder<T> implements Callable<TImage>{
 		
 		for (String key : keys)
 		{
-			
 			if (skippable != null)
 				if (strings.contains(skippable, key, false)) 
 					continue;
@@ -60,6 +59,7 @@ public class TImageBuilder<T> implements Callable<TImage>{
 		
 		keys = object.getProperties(enum_map.MAP_PROPERTIES).keySet();
 		
+		//fix the urls (
 		for (String key : keys)
 		{
 			String value = object.getProperty(enum_map.MAP_PROPERTIES, key);

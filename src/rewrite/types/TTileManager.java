@@ -2,6 +2,8 @@ package rewrite.types;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ExecutionException;
 
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
@@ -13,6 +15,7 @@ public class TTileManager
 	private List<TImageContainer> images = new ArrayList<TImageContainer>();
 	private TilePane pane;
 	private ScrollPane parent;
+	private BlockingDeque<String> deque;
 	
 	private TTileManager()
 	{
@@ -20,13 +23,14 @@ public class TTileManager
 		this.parent = null;
 	}
 	
-	public void bind(TilePane pane, ScrollPane parent)
+	public void bind(TilePane pane, ScrollPane parent, BlockingDeque<String> deque)
 	{
 		this.pane = pane;
 		this.parent = parent;
+		this.deque = deque;
 	}
 	
-	public synchronized void add(TImageContainer image)
+	public synchronized void add(TImageContainer image) throws InterruptedException, ExecutionException
 	{
 		if (image.getContainer() == null)
 		{
@@ -34,21 +38,22 @@ public class TTileManager
 			return;
 		}
 		
+		image.arm(true, "thumb_small");
 		this.images.add(image);
 		this.pane.getChildren().addAll(image.getContainer());
 		
-		notify();
+		deque.put("");
 	}
 	
-	public synchronized void add(List<TImageContainer> list)
+	public synchronized void add(List<TImageContainer> list) throws InterruptedException, ExecutionException
 	{
 		if (list == null)
 			throw new NullPointerException();
 
 		for (TImageContainer container : list)
 			add(container);
-
-		notify();
+		
+		deque.put("");
 	}
 
 	public TilePane getPane()
@@ -87,5 +92,4 @@ public class TTileManager
 	public static TTileManager instance() {
 		return instance;
 	}
-
 }

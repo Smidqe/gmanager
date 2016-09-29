@@ -9,14 +9,11 @@ package rewrite.types;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+
 import javafx.geometry.BoundingBox;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
@@ -30,8 +27,9 @@ public class TThumbnailRefresher implements Runnable
 	private TTileManager manager;
 	private List<Node> hidden, showing;
 	private boolean stop = false;
-	private DoubleProperty scrollPosition;
-	private ChangeListener<Number> __listener;
+
+	private ExecutorService __service;
+	private BlockingDeque<String> queue;
 	
 	public static TThumbnailRefresher instance()
 	{
@@ -44,28 +42,26 @@ public class TThumbnailRefresher implements Runnable
 		this.showing = new ArrayList<Node>();
 	}
 
-	public void bind(TTileManager manager, DoubleProperty doubleProperty)
+	public void setDeque(BlockingDeque<String> deque)
+	{
+		this.queue = deque;
+	}
+	
+	public void bind(TTileManager manager)
 	{
 		this.manager = manager;
-		this.scrollPosition = doubleProperty;
+	}
+	
+	public BoundingBox getViewportBoundsOnParent(ScrollPane viewport, TilePane pane)
+	{
+		double __value = pane.getHeight() * viewport.getVvalue() - viewport.getViewportBounds().getHeight() * viewport.getVvalue();
 		
-		__listener = new ChangeListener<Number>()
-		{
-
-			@Override
-			public synchronized void changed(ObservableValue<? extends Number> arg0, Number arg1, Number arg2) {
-				notify();
-			}
-		};
-
-		scrollPosition.addListener(__listener);
+		return new BoundingBox(0, __value, viewport.getWidth(), viewport.getViewportBounds().getHeight());
 	}
 	
 	public boolean inViewport(ScrollPane viewport, TilePane pane, Node node)
 	{
-		double __value = pane.getHeight() * viewport.getVvalue() - viewport.getViewportBounds().getHeight() * viewport.getVvalue();
-
-		return new BoundingBox(0, __value, viewport.getWidth(), __value + viewport.getHeight()).intersects(node.getBoundsInParent());
+		return getViewportBoundsOnParent(viewport, pane).intersects(node.getBoundsInParent());
 	}
 	
 	private void release(List<Node> nodes)
@@ -107,66 +103,85 @@ public class TThumbnailRefresher implements Runnable
 			else
 				this.showing.add(node);
 		}
+		
+		System.out.println("Ending scan");
 	}
 	
-	
-	private void load(List<Node> nodes)
+	//move this one to a different thread
+	private void load(List<Node> nodes) throws Exception
 	{
 		if (nodes.size() == 0)
 			return;
 
-		//create a separate thread to each node.
-		ExecutorService executor = Executors.newFixedThreadPool(nodes.size());
 		
-		List<Future<Image>> images = new ArrayList<Future<Image>>();
-		for (int i = 0; i < nodes.size(); i++)
-			images.add(executor.submit(new TImageLoader(manager.getContainerByNode(nodes.get(i)).getImage(), "thumb_small")));
+		List<Image> images = new ArrayList<Image>();
+		List<TImage> containers = new ArrayList<TImage>();
+		
+ 		for (Node node : nodes)
+			containers.add(manager.getContainerByNode(node).getImage());
+			
+ 		System.out.println("Image: " + containers.get(0).getImageURLs());
+ 		
+ 		images = __service.submit(new TImageLoader(containers, "thumb_small")).get();
 
+ 		if (images == null)
+ 			return;
+ 		
 		for (int i = 0; i < nodes.size(); i++)
-			try {
-				((ImageView) nodes.get(i)).setImage(images.get(i).get());
-			} catch (InterruptedException | ExecutionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		
-		images.clear();
-		executor.shutdown();
+			((ImageView) nodes.get(i)).setImage(images.get(i));
 	}
 
+	public List<Node> getShown()
+	{
+		return this.showing;
+	}
+	
+	public List<Node> getHidden()
+	{
+		return this.hidden;
+	}
+	
 	public void stop()
 	{
 		this.stop = true;
 	}
 	
 	@Override
-	public void run() 
+	public synchronized void run() 
 	{
-
+		__service = Executors.newCachedThreadPool(r -> {
+	        Thread t = new Thread(r);
+	        t.setDaemon(true);
+	        return t;
+		});
 		
 		while (!stop)
 		{
-			System.out.println("Scroll position: " + scrollPosition.doubleValue());
-
 			scan();
-			
-			System.out.println("Refresher - Amount of tiles showing(previously hidden): " + this.showing.size());
-			System.out.println("Refresher - Amount of tiles hidden(previously showing): " + this.hidden.size());
-			
-			load(this.showing);
-			release(this.hidden);
-			
-			try {
-				synchronized (__listener) {
-					__listener.wait();
-				}
 
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			//will notify image loaders that they can now run.
+			notify();
 			
-			System.out.println("Refresher was notified.");
+			//move these to different threads
+			try {
+				load(this.showing);
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			release(this.hidden);
+
+			
+			synchronized (queue) {
+				try {
+					queue.take();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 		}
+
+		__service.shutdown();
 	}
 }

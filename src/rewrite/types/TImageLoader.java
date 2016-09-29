@@ -1,5 +1,8 @@
 package rewrite.types;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import javafx.scene.image.Image;
@@ -10,14 +13,29 @@ import rewrite.types.TImage.enum_map;
  */
 
 
-public class TImageLoader implements Callable<Image>
+public class TImageLoader implements Callable<List<Image>>
 {
-	private TImage image;
+	private List<TImage> images;
 	private String version;
 	
-	public TImageLoader(TImage container, String version)
+	public TImageLoader()
 	{
-		this.image = container;
+		this.images = new ArrayList<TImage>();
+	}
+	
+	public TImageLoader(TImage container, String version)
+	{	
+		this();
+		
+		this.images.add(container);
+		this.version = version;
+	}
+	
+	public TImageLoader(List<TImage> containers, String version)
+	{
+		this();
+		
+		this.images = containers;
 		this.version = version;
 	}
 	
@@ -26,14 +44,27 @@ public class TImageLoader implements Callable<Image>
 		return new Image(URL, 150, 150, true, false, true);
 	}
 	
-	private Image load()
+	private List<Image> __images_load()
 	{
-		return load(image.getProperty(enum_map.MAP_IMAGES, version));
+		if (images.size() == 0)
+			return null;
+		
+		if (images.size() == 1)
+			return Arrays.asList(load(images.get(0).getProperty(enum_map.MAP_IMAGES, version)));
+		
+		List<Image> result = new ArrayList<Image>();
+		for (TImage image : images)
+			result.add(load(image.getProperty(enum_map.MAP_IMAGES, version)));
+		
+		return result;
 	}
-	
 
 	@Override
-	public Image call() throws Exception {
-		return load();
+	public List<Image> call() throws Exception 
+	{
+		if (images.size() != 0)
+			return __images_load();
+			
+		return null;
 	}
 }
