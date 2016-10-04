@@ -50,8 +50,11 @@ public class TImageContainer implements Serializable{
 	
 	public void arm(boolean show, String size) throws InterruptedException, ExecutionException
 	{
-		if (this.image == null || this.container == null)
+		if (this.image == null)
 			return;
+		
+		if (this.container == null)
+			this.container = new ImageView();
 		
 		//System.out.println("Arming");
 		

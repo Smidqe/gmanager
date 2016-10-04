@@ -70,10 +70,12 @@ public class arrays {
 	
 	public static <T> List<T> remove(List<T> list, List<Integer> indexes)
 	{
+		//sorthe indexes to increasing order
 		indexes.sort((a, b) -> Integer.compare(a, b)); //a simple quicksort (or whatever the java uses), 
 		
+		int count = 0;
 		for (int i = indexes.size(); i == 0;)
-			list.remove(i);
+			list.remove(i - count++);
 		
 		return list;
 	}

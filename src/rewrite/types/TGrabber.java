@@ -16,6 +16,7 @@ import org.json.simple.JSONObject;
 import javafx.application.Platform;
 import javafx.scene.image.ImageView;
 import rewrite.extensions.connections;
+import rewrite.types.factories.FThreadFactory;
 import rewrite.types.interfaces.IWebCodes;
 import rewrite.types.interfaces.IWebCodes.Codes;
 
@@ -52,10 +53,15 @@ public class TGrabber extends Observable implements Runnable
 		return __self;
 	}
 
+	public void stop()
+	{
+		this.stop = true;
+	}
+	
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		ExecutorService __executor = Executors.newCachedThreadPool();
+		ExecutorService __executor = Executors.newCachedThreadPool(new FThreadFactory("TGrabber", "__executor", true));
 
 		while (!this.stop)
 		{
@@ -120,51 +126,12 @@ public class TGrabber extends Observable implements Runnable
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				
+				break;
 			}
 		}
 		
+		__executor.shutdown();
+		System.out.println("TGrabber - Shutting down");
 	}
-
-//	@Override
-//	public void run() {
-//		ExecutorService __executor = Executors.newCachedThreadPool();
-//		
-//		try {
-//			if (!connections.ping(this.url).equals("200"))
-//				return;
-//			
-//			JSONObject object = connections.getJSON(this.url.toString());
-//
-//			Future<List<Map<String, Object>>> result = __executor.submit(new TParser(object));
-//			List<Map<String, Object>> list = result.get();
-//			
-//			List<Future<TImage>> images = new ArrayList<Future<TImage>>();
-//			List<TImage> finals = new ArrayList<TImage>();
-//			
-//			for (Map<String, Object> map : list)
-//				images.add(__executor.submit(new TImageBuilder(map)));
-//			
-//			for (Future<TImage> image : images)
-//				finals.add(image.get());
-//			
-//			List<TImageContainer> containers = new ArrayList<TImageContainer>();
-//			for (TImage image : finals)
-//				containers.add(new TImageContainer(image, new ImageView()));
-//			
-//			images.clear();
-//			finals.clear();
-//			list.clear();
-//
-//			
-//			
-//		} catch (IOException | ParseException | InterruptedException | ExecutionException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} finally {
-//			__executor.shutdown();
-//		}
-//	}
-	
-	
-
 }

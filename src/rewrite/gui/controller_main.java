@@ -53,6 +53,7 @@ import rewrite.types.TGrabber;
 import rewrite.types.TManager;
 import rewrite.types.TThumbnailRefresher;
 import rewrite.types.TTileManager;
+import rewrite.types.factories.FThreadFactory;
 import rewrite.types.queues.TRefresherQueue;
 
 public class controller_main implements Initializable
@@ -213,9 +214,25 @@ public class controller_main implements Initializable
 	@FXML
 	private void exit(ActionEvent e)
 	{
-		__executor.shutdown();
+		TGrabber.instance().stop();
+		TThumbnailRefresher.instance().stop();
 		
+		try {
+			__refresher_queue.put("shutdown");
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		try {
+			__grabber_deque.put("shutdown");
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		__executor.shutdown();
 		Platform.exit();
+		System.exit(0);
 	}
 
 	private void setWindow(Window window, Rectangle2D box)
@@ -252,8 +269,13 @@ public class controller_main implements Initializable
 	private Screen getClosestScreen(Window window)
 	{
 		ArrayList<Screen> screens = intersectingScreens(window);
+
+		if (screens.size() == 0)
+			return null;
 		
-		double min = 50000;
+		
+		
+		double min = Math.sqrt(Math.pow(window.getX() - screens.get(0).getBounds().getMinX(), 2) + Math.pow(window.getY() - screens.get(0).getBounds().getMinY(), 2));
 		double distance = 0;
 		int index = -1;
 		for (int i = 0; i < screens.size(); i++)
@@ -273,19 +295,30 @@ public class controller_main implements Initializable
 	private void setFullscreen(boolean full)
 	{
 		Window window = ap_main.getScene().getWindow();
-	
-		if (isWindowFull(window) && window.getX() != getClosestScreen(window).getBounds().getMinX())
+		Rectangle2D closest = getClosestScreen(window).getBounds();
+		
+		if (closest == null)
+			return;
+		
+		if (isWindowFull(window) && window.getX() != closest.getMinX())
 		{
-			setWindow(window, getClosestScreen(window).getBounds());
+			setWindow(window, closest);
 			return;
 		}
 		
 		if (!fullscreen) //to remember the last window position.
 			this.window = new Rectangle2D(window.getX(), window.getY(), window.getWidth(), window.getHeight()); 
 
-		setWindow(window, !full ? this.window : getClosestScreen(window).getBounds());
+		setWindow(window, !full ? this.window : closest);
 		
 		this.fullscreen = isWindowFull(window);
+		
+		try {
+			__refresher_queue.put("fullscreen");
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	@FXML
@@ -355,34 +388,12 @@ public class controller_main implements Initializable
 		
 		return values;
 	}
-	@SuppressWarnings("unused")
-	private void fillUntilLimit()
-	{
-		
-	}
-	
-	@SuppressWarnings("unused")
-	private void refresh()
-	{
-		/*
-		 	TODO:
-		 		- Create a new refreshing method that can be eventually moved to the TThumbnailRefresher class
-		 		- Will be used in conjuction with the new resize listener.
-		 */
-	}
 	
 	@Override
 	public synchronized void initialize(URL arg0, ResourceBundle arg1) 
 	{	
 		__grabber_deque = new LinkedBlockingDeque<String>();
-		__executor = Executors.newCachedThreadPool(r -> {
-	        Thread t = new Thread(r);
-	        
-	        t.setName("Thread: FX-Executor" + r.getClass().getClass().getTypeName());
-	        t.setDaemon(true);
-	        return t;
-	    });
-		
+		__executor = Executors.newCachedThreadPool(new FThreadFactory("FX-thread", "__executor", true));
 		
 		__manager = TManager.getInstance();
 		__tiles = __manager.getTileManager();

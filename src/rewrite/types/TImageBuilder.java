@@ -67,7 +67,7 @@ public class TImageBuilder implements Callable<TImage>{
 			if (!strings.contains(Arrays.asList("https", "http", "//"), value, false))
 				continue;
 			
-			if (value.contains("//"))
+			if (value.contains("//") && !strings.contains(Arrays.asList("https", "http"), value, false));
 				value = "https:" + value;
 			
 			object.setProperty(enum_map.MAP_IMAGES, key, value);

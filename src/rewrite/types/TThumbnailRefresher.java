@@ -54,7 +54,8 @@ public class TThumbnailRefresher implements Runnable
 	
 	public BoundingBox getViewportBoundsOnParent(ScrollPane viewport, TilePane pane)
 	{
-		double __value = pane.getHeight() * viewport.getVvalue() - viewport.getViewportBounds().getHeight() * viewport.getVvalue();
+		//double __value = pane.getHeight() * viewport.getVvalue() - viewport.getViewportBounds().getHeight() * viewport.getVvalue();
+		double __value = (pane.getHeight() - viewport.getViewportBounds().getHeight()) * viewport.getVvalue();
 		
 		return new BoundingBox(0, __value, viewport.getWidth(), viewport.getViewportBounds().getHeight());
 	}
@@ -75,7 +76,7 @@ public class TThumbnailRefresher implements Runnable
 	
 	public void scan()
 	{
-		System.out.println("Refresher - Scanning");
+		//System.out.println("Refresher - Scanning");
 		
 		List<Node> nodes = manager.getPane().getChildren();
 		
@@ -104,7 +105,7 @@ public class TThumbnailRefresher implements Runnable
 				this.showing.add(node);
 		}
 		
-		System.out.println("Ending scan");
+		//System.out.println("Ending scan");
 	}
 	
 	//move this one to a different thread
@@ -113,15 +114,12 @@ public class TThumbnailRefresher implements Runnable
 		if (nodes.size() == 0)
 			return;
 
-		
 		List<Image> images = new ArrayList<Image>();
 		List<TImage> containers = new ArrayList<TImage>();
 		
  		for (Node node : nodes)
 			containers.add(manager.getContainerByNode(node).getImage());
-			
- 		System.out.println("Image: " + containers.get(0).getImageURLs());
- 		
+
  		images = __service.submit(new TImageLoader(containers, "thumb_small")).get();
 
  		if (images == null)
@@ -183,5 +181,7 @@ public class TThumbnailRefresher implements Runnable
 		}
 
 		__service.shutdown();
+		
+		System.out.println("TThumbnailRefresher - Shutting down");
 	}
 }

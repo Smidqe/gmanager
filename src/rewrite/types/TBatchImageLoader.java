@@ -21,8 +21,6 @@ public class TBatchImageLoader implements Runnable
 		this.object = object;
 	}
 
-	
-	
 	public void load()
 	{
 		ExecutorService __executor = Executors.newFixedThreadPool(object.size());
