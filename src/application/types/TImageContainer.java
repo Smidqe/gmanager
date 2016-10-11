@@ -1,29 +1,31 @@
 package application.types;
 
-import application.images.image.TImage;
-import javafx.scene.image.Image;
+import java.io.Serializable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+
+import application.types.TIDCreator;
 import javafx.scene.image.ImageView;
 
-public class TImageContainer {
+public class TImageContainer implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5108226962075856755L;
 	private TImage image;
-	private ImageView container;
+	private transient ImageView container;
 	
-	public TImageContainer(TImage image, ImageView container)
+	private String UUID;
+	private boolean visible;
+	
+	public TImageContainer(TImage image, ImageView container) throws InterruptedException, ExecutionException
 	{
 		this.image = image;
 		this.container = container;
+		
+		this.UUID = Executors.newSingleThreadExecutor().submit(new TIDCreator<>(this)).get();
 	}
-	
-	public void setImage(TImage image)
-	{
-		this.image = image;
-	}
-	
-	public void setContainer(ImageView view)
-	{
-		this.container = view;
-	}
-	
+
 	public ImageView getContainer()
 	{
 		return this.container;
@@ -34,13 +36,31 @@ public class TImageContainer {
 		return this.image;
 	}
 	
-	public void arm(boolean show)
+	public String getUUID()
 	{
-		if (this.image == null || this.container == null)
+		return this.UUID;
+	}
+	
+	public boolean isVisible()
+	{
+		return this.visible;
+	}
+	
+	public void arm(boolean show, String size) throws InterruptedException, ExecutionException
+	{
+		if (this.image == null)
 			return;
 		
-		System.out.println("Arming");
+		if (this.container == null)
+			this.container = new ImageView();
 		
-		this.container.setImage(new Image(show ? this.image.getThumbnailURL() : null, true));
+		//System.out.println("Arming");
+		
+		if (show)
+			this.container.setImage(Executors.newSingleThreadExecutor().submit(new TImageLoader(this.image, size)).get().get(0));
+		else
+			this.container.setImage(null);
+
+		this.visible = show;
 	}
 }
