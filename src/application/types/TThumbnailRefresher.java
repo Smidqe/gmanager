@@ -37,7 +37,7 @@ public class TThumbnailRefresher implements Runnable
 		this.__deque = deque;
 	}
 
-	public boolean inViewport(Node node)
+	public synchronized boolean inViewport(Node node)
 	{
 		return this.__gallery.getViewportLocation().intersects(node.getBoundsInParent());
 	}

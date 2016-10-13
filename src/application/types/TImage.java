@@ -11,7 +11,7 @@ import application.types.TIDCreator;
 
 public class TImage implements Serializable
 {
-	public enum enum_map {MAP_PROPERTIES, MAP_IMAGES};
+	public enum Maps {MAP_PROPERTIES, MAP_IMAGES};
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -24,36 +24,36 @@ public class TImage implements Serializable
 		this.images = new HashMap<String, String>();
 	}
 	
-	public Map<String, String> getMap(enum_map map)
+	public Map<String, String> getMap(Maps map)
 	{
-		if (map == enum_map.MAP_PROPERTIES)
+		if (map == Maps.MAP_PROPERTIES)
 			return properties;
 		else
 			return images;
 	}
 	
-	public Map<String, String> getProperties(enum_map map)
+	public Map<String, String> getProperties(Maps map)
 	{
 		return getMap(map);
 	}
 	
-	public synchronized String getProperty(enum_map map, String key)
+	public synchronized String getProperty(Maps map, String key)
 	{
 		return getMap(map).get(key);
 	}
 	
-	public synchronized void setProperty(enum_map map, String key, String value)
+	public synchronized void setProperty(Maps map, String key, String value)
 	{
 		if (value == null)
 			value = "";
 		
-		if (map == enum_map.MAP_PROPERTIES)
+		if (map == Maps.MAP_PROPERTIES)
 			this.properties.put(key, value);
 		else
 			this.images.put(key, value);
 	}
 	
-	public synchronized void setProperties(enum_map map, List<String> keys, List<String> values)
+	public synchronized void setProperties(Maps map, List<String> keys, List<String> values)
 	{
 		if (!(keys.size() == values.size()))
 			throw new IndexOutOfBoundsException("Amount of keys doesn't match the amount of values, no null values this time!");

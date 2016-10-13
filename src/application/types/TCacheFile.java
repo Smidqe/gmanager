@@ -12,14 +12,15 @@ public class TCacheFile extends TBinaryFile{
 	private static final long serialVersionUID = 1255846491775200168L;
 	private String UUID;
 
-	public TCacheFile(String pathname, boolean create) throws IOException {
+	public TCacheFile(String pathname, boolean create, String UUID) throws IOException {
 		super(pathname, create);
-		// TODO Auto-generated constructor stub
+		
+		this.UUID = UUID;
 	}
 
-	public TCacheFile(String path) throws IOException
+	public TCacheFile(String path, String UUID) throws IOException
 	{
-		this(path, true);
+		this(path, true, UUID);
 	}
 	
 	public boolean exists()

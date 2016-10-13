@@ -137,7 +137,7 @@ public class TGallery
 		};
 	}
 	
-	public BoundingBox getViewportLocation()
+	public synchronized BoundingBox getViewportLocation()
 	{
 		//double __value = pane.getHeight() * viewport.getVvalue() - viewport.getViewportBounds().getHeight() * viewport.getVvalue();
 		double __value = (__tiles.getHeight() - __container.getViewportBounds().getHeight()) * __container.getVvalue();

@@ -1,11 +1,12 @@
 package application.types;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import application.types.TImage.enum_map;
+import application.types.TImage.Maps;
 import javafx.scene.image.Image;
 
 /*
@@ -19,6 +20,7 @@ public class TImageLoader implements Callable<List<Image>>
 	
 	private List<TImage> images;
 	private String version;
+	private TCacheManager __manager = TCacheManager.instance();
 	
 	public TImageLoader()
 	{
@@ -46,18 +48,33 @@ public class TImageLoader implements Callable<List<Image>>
 		return new Image(URL, 150, 150, true, false, true);
 	}
 	
-	private List<Image> __images_load()
+	private Image loadFromCache(String ID) throws ClassNotFoundException, IOException
+	{
+		if (!__manager.exists(ID))
+			return null;
+			
+		return (Image) __manager.load(ID);
+	}
+	
+	private List<Image> __images_load() throws ClassNotFoundException, IOException
 	{
 		if (images.size() == 0)
 			return null;
 		
 		if (images.size() == 1)
-			return Arrays.asList(load(images.get(0).getProperty(enum_map.MAP_IMAGES, version)));
-		
+			if (__manager.exists(images.get(0).getProperty(Maps.MAP_PROPERTIES, "ID")))
+				return Arrays.asList(loadFromCache(images.get(0).getProperty(Maps.MAP_PROPERTIES, "ID")));
+			else
+				return Arrays.asList(load(images.get(0).getProperty(Maps.MAP_IMAGES, version)));
+
 		List<Image> result = new ArrayList<Image>();
 		for (TImage image : images)
-			result.add(load(image.getProperty(enum_map.MAP_IMAGES, version)));
-		
+		{
+			if (__manager.exists(image.getProperty(Maps.MAP_PROPERTIES, "ID")))
+				result.add(loadFromCache(image.getProperty(Maps.MAP_PROPERTIES, "ID")));
+			else
+				result.add(load(image.getProperty(Maps.MAP_IMAGES, version)));
+		}
 		return result;
 	}
 
