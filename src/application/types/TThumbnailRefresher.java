@@ -5,12 +5,15 @@ package application.types;
  *   	- Clean
  *   	- Branch the image loading to separate threads instead of doing it on this thread
  *   		- This should be relatively easy, need to create a new loader probably, or I can create it on this thread...
- *  	
+ *  	- Rewrite the scanning functionality
+ *  		- Causes the refresher to get stuck upon scanning
+ *  		- Also makes the gui go awry
  */
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,12 +24,14 @@ import javafx.scene.image.ImageView;
 
 public class TThumbnailRefresher implements Runnable
 {
+	public enum Status {IDLE, SCANNING, RUNNING};
+	
 	private TGallery __gallery;
 	private List<Node> hidden, showing;
 	private boolean stop = false;
 
-	private ExecutorService __service;
 	private BlockingDeque<String> __deque;
+	private Status __status;
 	
 	public TThumbnailRefresher(TGallery manager, BlockingDeque<String> deque) 
 	{
@@ -42,13 +47,13 @@ public class TThumbnailRefresher implements Runnable
 		return this.__gallery.getViewportLocation().intersects(node.getBoundsInParent());
 	}
 	
-	private void release(List<Node> nodes)
+	private void release(List<Node> nodes) throws InterruptedException, ExecutionException
 	{
 		if (nodes.size() == 0)
 			return;
 		
 		for (Node node : nodes)
-			((ImageView) node).setImage(null);
+			__gallery.getManager().getContainerByNode(node).arm(false, "");
 	}
 	
 	public void scan()
@@ -57,22 +62,42 @@ public class TThumbnailRefresher implements Runnable
 		
 		List<Node> nodes = __gallery.getTilePane().getChildren();
 		
-		if (nodes.size() == 0)
-			return;
+		System.out.println("Refresher - Got children");
 		
-		this.hidden.clear();
-		this.showing.clear();
-
-		for (Node node : nodes)
+		if (nodes.size() < 15)
 		{
-			boolean hidden = (!inViewport(node));
+			System.out.println("Refresher - No nodes got");
+			return;
+		}
+		System.out.println("Refresher - Got nodes");
+		System.out.println(nodes);
+		
+		if (this.hidden.size() > 0)
+			this.hidden.clear();
+		
+		if (this.showing.size() > 0)
+			this.showing.clear();
+
+		System.out.println("Refresher - Arrays cleared");
+		boolean hidden = false;
+		for (Node node : nodes)
+		{	
+			hidden = (!inViewport(node));
 			
-			if (!hidden && ((ImageView) node).getImage() != null)
+			if (node == null)
 				continue;
 			
-			if (hidden && ((ImageView) node).getImage() == null)
+			System.out.println("Checking if not hidden");
+			if (!hidden && (((ImageView) node).getImage() != null))
+			{
+				System.out.println("Does this finish?");
+				continue;
+			}
+			System.out.println("Checking if hidden");
+			if (hidden && (((ImageView) node).getImage() == null))
 				continue;
 			
+			System.out.println("Adding to corresponding arrays");
 			if (hidden)
 				this.hidden.add(node);
 			else
@@ -89,20 +114,8 @@ public class TThumbnailRefresher implements Runnable
 		if (nodes.size() == 0)
 			return;
 
-		List<Image> images = new ArrayList<Image>();
-		List<TImage> containers = new ArrayList<TImage>();
-		
  		for (Node node : nodes)
-			containers.add(__gallery.getManager().getContainerByNode(node).getImage());
-
- 		//rewrite this section, currently acts as a bottle neck.
- 		images = __service.submit(new TImageLoader(containers, "thumb_small")).get();
-
- 		if (images == null)
- 			return;
- 		
-		for (int i = 0; i < nodes.size(); i++)
-			((ImageView) nodes.get(i)).setImage(images.get(i));
+			__gallery.getManager().getContainerByNode(node).arm(true, "thumb_small");
 	}
 
 	public List<Node> getShown()
@@ -120,43 +133,45 @@ public class TThumbnailRefresher implements Runnable
 		this.stop = true;
 	}
 	
+	public Status getStatus()
+	{
+		return this.__status;
+	}
+	
 	@Override
 	public synchronized void run() 
 	{
-		__service = Executors.newCachedThreadPool(r -> {
-	        Thread t = new Thread(r);
-	        t.setDaemon(true);
-	        return t;
-		});
 		
 		while (!stop)
 		{
+			try {
+				this.__deque.take();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			this.__status = Status.SCANNING;
 			scan();
 
-			//will notify image loaders that they can now run.
-			notify();
-			
-			//move these to different threads
-			try {
-				load(this.showing);
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			release(this.hidden);
-
-			
-			synchronized (this.__deque) {
+			this.__status = Status.RUNNING;
+			if (this.hidden.size() > 0 || this.showing.size() > 0)
+			{
+				System.out.println("Refresher - Starting loading/offloading");
+				
 				try {
-					this.__deque.take();
-				} catch (InterruptedException e) {
+					load(this.showing);
+					release(this.hidden);
+				} catch (Exception e1) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					e1.printStackTrace();
 				}
+				
+				
 			}
+			
+			this.__status = Status.IDLE;
 		}
-
-		__service.shutdown();
 		
 		System.out.println("TThumbnailRefresher - Shutting down");
 	}

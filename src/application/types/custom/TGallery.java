@@ -11,6 +11,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 import application.types.TGrabber;
 import application.types.TGrabber.Status;
+import application.types.factories.FThreadFactory;
 import application.types.TSite;
 import application.types.TThumbnailRefresher;
 import application.types.TTileManager;
@@ -42,39 +43,46 @@ public class TGallery
 	private ExecutorService __threads;
 	private BlockingDeque<String> __action_deque, __grabber_deque;
 	
+	private boolean __allow_refresh;
+	
 	public TGallery(TilePane tiles, ScrollPane container) throws MalformedURLException, InterruptedException 
 	{
+		this.__allow_refresh = true;
+		
+		//create the deques
 		this.__action_deque = new LinkedBlockingDeque<String>();
 		this.__grabber_deque = new LinkedBlockingDeque<String>();
 		
+		//initialize some other necessary variables
 		this.__tiles = tiles;
 		this.__container = container;
 		this.__manager = new TTileManager(this.__tiles, this.__action_deque);
-		this.__grabber = TGrabber.instance(); //TODO: Switch this to a non-singleton form.
-		this.__refresher = new TThumbnailRefresher(this, this.__action_deque);
-		//
-		this.__grabber.bind(__manager, __grabber_deque);
+		this.__grabber = new TGrabber(this.__manager, this.__grabber_deque); 
+		this.__refresher = new TThumbnailRefresher(this, this.__action_deque);		
+		
+		//bind the managers deque to grabbers deque
 		
 		//bind the dimensions of the tilepane to the parent
-		this.__tiles.prefHeightProperty().bind(this.__container.heightProperty());
-		this.__tiles.prefWidthProperty().bind(this.__container.widthProperty());
+		//this.__tiles.prefHeightProperty().bind(this.__container.heightProperty());
+		//this.__tiles.prefWidthProperty().bind(this.__container.widthProperty());
 		
 		//create thread for the refresher
-		this.__threads = Executors.newCachedThreadPool();
+		this.__threads = Executors.newCachedThreadPool(new FThreadFactory("TGallery", "Subthreads", true));
 		
 		//TODO: For testing! Remove once finished;
 		this.__site = new TSite();
 		this.__site.setURL("images", new URL("https://derpibooru.org/images.json"));
-		this.__grabber.setURL(this.__site.getURL("images", "?page=", ++__current_page), false);
+		this.__grabber.setURL(this.__site.getURL("images", "?page=", __current_page), false);
 		
 		//add the listeners for resizing and scrolling
 		__container.vvalueProperty().addListener(createScrollListener());
-		__container.widthProperty().addListener(createResizeListener());
-		__container.heightProperty().addListener(createResizeListener());
+		//__container.widthProperty().addListener(createResizeListener());
+		//__container.heightProperty().addListener(createResizeListener());
 		
 		//Add the refresher.
 		this.__threads.submit(this.__refresher);
 		this.__threads.submit(this.__grabber);
+
 	}
 
 	private ChangeListener<Number> createResizeListener()
@@ -95,10 +103,12 @@ public class TGallery
 				task = new TimerTask()
 				{
 					@Override
-					public void run() 
+					public synchronized void run() 
 					{
-						try {
-							__action_deque.put("");
+						try 
+						{
+							if (__refresher.getStatus() == TThumbnailRefresher.Status.IDLE)
+								__action_deque.put("");
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -118,11 +128,15 @@ public class TGallery
 			@Override
 			public synchronized void changed(ObservableValue<? extends Number> arg0, Number arg1, Number valueNew) 
 			{
-				System.out.println("Changed");
+				try {					
+					//make sure that we don't overwhelm the refresher
+					
+					System.out.println("TGallery: __allow_refreshing: " + __allow_refresh);
+					
+					if ((__refresher.getStatus() == TThumbnailRefresher.Status.IDLE) && __allow_refresh)
+						__action_deque.put("");
 				
-				try {
-					__action_deque.put("");
-				
+					
 					if ((valueNew.doubleValue() == 1.0) && (__grabber.getStatus() == Status.IDLE))
 					{
 						__grabber.setURL(__site.getURL("images", "?page=", ++__current_page), false);
@@ -139,13 +153,12 @@ public class TGallery
 	
 	public synchronized BoundingBox getViewportLocation()
 	{
-		//double __value = pane.getHeight() * viewport.getVvalue() - viewport.getViewportBounds().getHeight() * viewport.getVvalue();
 		double __value = (__tiles.getHeight() - __container.getViewportBounds().getHeight()) * __container.getVvalue();
 		
 		return new BoundingBox(0, __value, __container.getWidth(), __container.getViewportBounds().getHeight());
 	}
 	
-	public TilePane getTilePane()
+	public synchronized TilePane getTilePane()
 	{
 		return this.__tiles;
 	}
@@ -160,6 +173,7 @@ public class TGallery
 		return this.__manager;
 	}
 	
+	//will eventually get the amount of pictures/pages loaded depending on argument id
 	public int getAmount(Count id)
 	{
 		switch (id)
@@ -172,6 +186,11 @@ public class TGallery
 		return -1;
 	}
 
+	public void allowRefreshing(boolean value)
+	{
+		this.__allow_refresh = value;
+	}
+	
 	public void stop() throws InterruptedException 
 	{
 		__grabber.stop();

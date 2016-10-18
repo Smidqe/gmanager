@@ -5,9 +5,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import application.extensions.arrays;
+
 public class TCacheManager 
 {
 	private static TCacheManager instance = new TCacheManager();
+	
 	private List<String> ids;
 	private TSettings __settings = TSettings.instance();
 	
@@ -46,22 +49,22 @@ public class TCacheManager
 	
 	public <T extends Serializable> T load(String id) throws ClassNotFoundException, IOException
 	{
-		int index = ids.indexOf(id);
-		
-		if (index == -1)
-			return null;
+		int pos = arrays.position(ids, id);
 
-		return getFileByID(ids.get(index)).get();
-	}
-	
-	public boolean exists(String ID)
-	{
-		return this.ids.indexOf(ID) != -1;
+		if (pos == -1)
+			return null;
+		
+		return getFileByID(ids.get(pos)).get();
 	}
 	
 	public static TCacheManager instance()
 	{
 		return instance;
+	}
+
+	public boolean exists(String ID) 
+	{
+		return arrays.exists(ids, ID);
 	}
 
 }

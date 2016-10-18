@@ -25,16 +25,18 @@ public class TGrabber extends Observable implements Runnable
 {
 	public enum Status {IDLE, RUNNING};
 	
-	private static TGrabber __self = new TGrabber();
 	private TTileManager __tiles;
 	private URL url;
 	private boolean stop;
-	private BlockingDeque<String> deque;
+	private BlockingDeque<String> __grabber;
 	private Status __status;
 	
 	
-	private TGrabber() 
+	public TGrabber(TTileManager manager, BlockingDeque<String> grabber) 
 	{
+		this.__tiles = manager;
+		this.__grabber = grabber;
+		
 		this.url = null;
 		this.__status = Status.IDLE;
 	}
@@ -44,20 +46,9 @@ public class TGrabber extends Observable implements Runnable
 		this.url = url;
 		
 		if (forceGrab)
-			this.deque.put("Changed");
-	}
-
-	public void bind(TTileManager manager, BlockingDeque<String> deque)
-	{
-		this.__tiles = manager;
-		this.deque = deque;
+			this.__grabber.put("Changed");
 	}
 	
-	public static TGrabber instance()
-	{
-		return __self;
-	}
-
 	public void stop()
 	{
 		this.stop = true;
@@ -109,8 +100,6 @@ public class TGrabber extends Observable implements Runnable
 					for (TImage image : finals)
 						containers.add(new TImageContainer(image, new ImageView()));
 					
-					System.out.println("TGrabber: " + containers);
-					
 					Platform.runLater(new Runnable() {
 						
 						@Override
@@ -120,6 +109,7 @@ public class TGrabber extends Observable implements Runnable
 							
 							try {
 								__tiles.add(containers);
+								//__refresher.put("");
 							} catch (InterruptedException | ExecutionException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -135,7 +125,7 @@ public class TGrabber extends Observable implements Runnable
 				
 				this.__status = Status.IDLE;
 				
-				deque.take();
+				__grabber.take();
 				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block

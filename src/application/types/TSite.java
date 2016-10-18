@@ -21,6 +21,13 @@ public class TSite
 		this.IDs = new WeakHashMap<String, String>();
 		this.skippables = new ArrayList<String>();
 		this.urls = new WeakHashMap<String, URL>();
+		
+		loadSettings();
+	}
+	
+	private void loadSettings()
+	{
+		
 	}
 	
 	public void setURL(String name, URL url) throws MalformedURLException
@@ -72,4 +79,11 @@ public class TSite
 		
 		return null;
 	}
+	
+	public boolean needsAuthentication()
+	{
+		return this.authenticate;
+	}
+	
+	
 }

@@ -4,7 +4,6 @@ package application.gui;
 /*
 	TODO:
 		- Figure out why GUI goes white when there a lot of tiles
-		- Perhaps utilise javafx's own Service and Task classes
 		- Overall clean this controller (not a priority)
 		- 
 
@@ -53,10 +52,6 @@ public class controller_main implements Initializable
 	public static final int __INDEX_LAYER_SETTINGS = 4;
 	public static final int __INDEX_LAYER_PAGESWITCH = 5; 
 	
-	/*
-		Combine sp_images and tp_images into a new pane (also replaces tp_search)
-	
-	*/
 	@FXML private AnchorPane lr_images, lr_search, lr_filters, lr_account, lr_settings, lr_pageswitch, lr_marks, ap_title, ap_main;
 	@FXML private ScrollPane sp_images;
 	@FXML private TilePane tp_images, tp_search;
@@ -282,14 +277,6 @@ public class controller_main implements Initializable
         window.setX(event.getScreenX() + point.getX());
         window.setY(event.getScreenY() + point.getY());
 	}
-
-	
-	public boolean inViewport(ScrollPane viewport, TilePane pane, Node node)
-	{
-		double __value = pane.getHeight() * viewport.getVvalue() - viewport.getViewportBounds().getHeight() * viewport.getVvalue();
-
-		return new BoundingBox(0, __value, viewport.getWidth(), __value + viewport.getHeight()).intersects(node.getBoundsInParent());
-	}
 	
 	private void resize(MouseEvent event, Scene scene)
 	{
@@ -312,6 +299,7 @@ public class controller_main implements Initializable
 		
 		if (cursor.equals(Cursor.S_RESIZE) || cursor.equals(Cursor.SW_RESIZE) || cursor.equals(Cursor.SE_RESIZE))
 			scene.getWindow().setHeight(event.getSceneY());
+		
 		
 		if (cursor.equals(Cursor.W_RESIZE) || cursor.equals(Cursor.NW_RESIZE) || cursor.equals(Cursor.SW_RESIZE))
 		{
@@ -385,10 +373,14 @@ public class controller_main implements Initializable
 			@Override
 			public void handle(MouseEvent event) 
 			{ 		
+				__gallery.allowRefreshing(false);
+				
 				if (ap_main.getScene().getCursor().equals(Cursor.DEFAULT))
 					relocate(event, ap_main.getScene().getWindow(), point); 
 				else
 					resize(event, ap_main.getScene());
+				
+				__gallery.allowRefreshing(true);
 			}
 			
 		});
@@ -407,7 +399,7 @@ public class controller_main implements Initializable
 
 
 		__layers = new ArrayList<AnchorPane>();
-		__layers.addAll(Arrays.asList(lr_images, lr_search, lr_filters, lr_account, lr_settings, lr_pageswitch));
+		__layers.addAll(Arrays.asList(lr_images, lr_search, lr_filters, lr_account, lr_settings));
 		
 		for (AnchorPane pane : __layers)
 			mode(pane, false);

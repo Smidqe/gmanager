@@ -17,7 +17,7 @@ public class Main extends Application {
 	        Scene scene = new Scene(root);
 	        scene.getStylesheets().add("application/data/resources/gui.css");
 
-	        stage.initStyle(StageStyle.UNDECORATED);
+	        stage.initStyle(StageStyle.TRANSPARENT);
 	        stage.setScene(scene);
 	        
 	        stage.setOnCloseRequest(e -> Platform.exit());

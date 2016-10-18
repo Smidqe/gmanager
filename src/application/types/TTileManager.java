@@ -22,7 +22,7 @@ public class TTileManager
 		this.__refresher_deque = deque;
 	}
 
-	public synchronized void add(TImageContainer image) throws InterruptedException, ExecutionException
+	public synchronized void add(TImageContainer image, boolean forceRefresh) throws InterruptedException, ExecutionException
 	{
 		if (image.getContainer() == null)
 		{
@@ -35,7 +35,8 @@ public class TTileManager
 		this.images.add(image);
 		this.__gallery.getChildren().add(image.getContainer());
 		
-		__refresher_deque.put("");
+		if (forceRefresh)
+			__refresher_deque.put("");
 	}
 	
 	public synchronized void add(List<TImageContainer> list) throws InterruptedException, ExecutionException
@@ -44,7 +45,7 @@ public class TTileManager
 			throw new NullPointerException();
 
 		for (TImageContainer container : list)
-			add(container);
+			add(container, false);
 		
 		__refresher_deque.put("");
 	}
@@ -78,7 +79,7 @@ public class TTileManager
 		return container;
 	}
 
-	public BlockingDeque<String> getDeque() 
+	public synchronized BlockingDeque<String> getDeque() 
 	{
 		return this.__refresher_deque;
 	}

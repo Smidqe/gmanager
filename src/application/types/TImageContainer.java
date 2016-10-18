@@ -5,6 +5,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
 import application.types.TIDCreator;
+import javafx.application.Platform;
 import javafx.scene.image.ImageView;
 
 public class TImageContainer implements Serializable{
@@ -55,12 +56,24 @@ public class TImageContainer implements Serializable{
 			this.container = new ImageView();
 		
 		//System.out.println("Arming");
-		
-		if (show)
-			this.container.setImage(Executors.newSingleThreadExecutor().submit(new TImageLoader(this.image, size)).get().get(0));
-		else
-			this.container.setImage(null);
+		Platform.runLater(new Runnable() {
 
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				if (show)
+					try {
+						container.setImage((new TImageLoader(image, size)).call().get(0));
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				else
+					container.setImage(null);
+				
+			}
+		});
 		this.visible = show;
+		
 	}
 }

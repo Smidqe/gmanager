@@ -111,4 +111,14 @@ public class arrays {
 		
 		return list;
 	}
+	
+	public static <T> boolean exists(List<T> list, T object)
+	{
+		return list.indexOf(object) != -1;
+	}
+	
+	public static <T> int position(List<T> list, T object)
+	{
+		return list.indexOf(object);
+	}
 }
