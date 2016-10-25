@@ -49,13 +49,15 @@ public class TImageContainer implements Serializable{
 	
 	public void arm(boolean show, String size) throws InterruptedException, ExecutionException
 	{
+		//if there is no image assigned to this, don't proceed further.
 		if (this.image == null)
 			return;
 		
+		//should never happen, but let's pretend it can happen, there is no harm done
 		if (this.container == null)
 			this.container = new ImageView();
 		
-		//System.out.println("Arming");
+		//Setting the image has to happen on JavaFX thread, otherwise causes GUI corruption.
 		Platform.runLater(new Runnable() {
 
 			@Override

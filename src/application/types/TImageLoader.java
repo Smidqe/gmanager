@@ -16,8 +16,6 @@ import javafx.scene.image.Image;
 
 public class TImageLoader implements Callable<List<Image>>
 {
-	public enum Method {URL, CACHE};
-	
 	private List<TImage> images;
 	private String version;
 	private TCacheManager __manager = TCacheManager.instance();

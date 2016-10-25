@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +26,6 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.BoundingBox;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Cursor;
@@ -174,7 +174,7 @@ public class controller_main implements Initializable
 	{
 		try {
 			__gallery.stop();
-		} catch (InterruptedException e1) {
+		} catch (InterruptedException | ExecutionException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}

@@ -7,7 +7,7 @@ public class arrays {
 	public static <T> List<T> add(List<T> list, T object, boolean append)
 	{
 		if (list == null || object == null)
-			throw new NullPointerException();
+			throw new NullPointerException("arrays::add(list, object, append): List or object is null");
 		
 		if (append)
 			list.add(object);
@@ -23,7 +23,11 @@ public class arrays {
 		return add(list, object, true);
 	}
 	
-	public static <T> List<T> add(List<T> list, List<T> append) {
+	public static <T> List<T> add(List<T> list, List<T> append) 
+	{
+		if (list == null || append == null)
+			throw new NullPointerException("arrays::add(list, list): Either list is null or append is null");
+		
 		for (T object : append)
 			list = add(list, object, true);
 		
@@ -33,7 +37,7 @@ public class arrays {
 	public static <T> List<T> clearDoubles(List<T> list)
 	{
 		if (list == null)
-			throw new NullPointerException();
+			throw new NullPointerException("arrays::clearDoubles(list): List is null");
 		
 		List<T> filtered = new ArrayList<T>();
 		
@@ -70,6 +74,9 @@ public class arrays {
 	
 	public static <T> List<T> remove(List<T> list, List<Integer> indexes)
 	{
+		if (list == null || indexes == null)
+			throw new NullPointerException("arrays::remove(list, indexes): Either list is null or indexes is null");
+		
 		//sorthe indexes to increasing order
 		indexes.sort((a, b) -> Integer.compare(a, b)); //a simple quicksort (or whatever the java uses), 
 		
@@ -108,6 +115,9 @@ public class arrays {
 	{
 		if (!allSize(swappable, 2))
 			throw new Exception("arrays::swap(list, list): A sub array has more or less than 2 values");
+		
+		for (List<Integer> sub : swappable)
+			list = swap(list, sub.get(0), sub.get(1));
 		
 		return list;
 	}

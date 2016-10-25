@@ -14,9 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
+import application.extensions.arrays;
 import application.types.custom.TGallery;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
@@ -58,57 +57,36 @@ public class TThumbnailRefresher implements Runnable
 	
 	public void scan()
 	{
-		System.out.println("Refresher - Scanning");
-		
 		List<Node> nodes = __gallery.getTilePane().getChildren();
 		
-		System.out.println("Refresher - Got children");
-		
+		//if we haven't loaded the first batch.
+		//TODO: Switch this to a site linked constant or perhaps something that the user can modify
 		if (nodes.size() < 15)
-		{
-			System.out.println("Refresher - No nodes got");
 			return;
-		}
-		System.out.println("Refresher - Got nodes");
-		System.out.println(nodes);
 		
-		if (this.hidden.size() > 0)
-			this.hidden.clear();
+		this.hidden.clear();
+		this.showing.clear();
 		
-		if (this.showing.size() > 0)
-			this.showing.clear();
-
-		System.out.println("Refresher - Arrays cleared");
 		boolean hidden = false;
+		Image image = null;
 		for (Node node : nodes)
-		{	
-			hidden = (!inViewport(node));
-			
+		{
 			if (node == null)
 				continue;
 			
-			System.out.println("Checking if not hidden");
-			if (!hidden && (((ImageView) node).getImage() != null))
-			{
-				System.out.println("Does this finish?");
-				continue;
-			}
-			System.out.println("Checking if hidden");
-			if (hidden && (((ImageView) node).getImage() == null))
+			hidden = !inViewport(node);
+			image = ((ImageView) node).getImage();
+			
+			//no reason to add those nodes that are not in viewport and not loaded, same for the opposite
+			if ((hidden && (image == null)) || (!hidden && (image != null)))
 				continue;
 			
-			System.out.println("Adding to corresponding arrays");
-			if (hidden)
-				this.hidden.add(node);
-			else
-				this.showing.add(node);
+			this.hidden = arrays.add(this.hidden, node, hidden);
+			this.showing = arrays.add(this.showing, node, !hidden);
 		}
-
-		System.out.println("Hidden: Amount: " + this.hidden.size());
-		System.out.println("Showing: Amount: " + this.showing.size());
 	}
 	
-	//move this one to a different thread
+	//move this one to a different thread?
 	private void load(List<Node> nodes) throws Exception
 	{
 		if (nodes.size() == 0)
@@ -118,16 +96,6 @@ public class TThumbnailRefresher implements Runnable
 			__gallery.getManager().getContainerByNode(node).arm(true, "thumb_small");
 	}
 
-	public List<Node> getShown()
-	{
-		return this.showing;
-	}
-	
-	public List<Node> getHidden()
-	{
-		return this.hidden;
-	}
-	
 	public void stop()
 	{
 		this.stop = true;
@@ -157,7 +125,7 @@ public class TThumbnailRefresher implements Runnable
 			this.__status = Status.RUNNING;
 			if (this.hidden.size() > 0 || this.showing.size() > 0)
 			{
-				System.out.println("Refresher - Starting loading/offloading");
+				//System.out.println("Refresher - Starting loading/offloading");
 				
 				try {
 					load(this.showing);
@@ -166,13 +134,12 @@ public class TThumbnailRefresher implements Runnable
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				
-				
+			
 			}
 			
 			this.__status = Status.IDLE;
 		}
 		
-		System.out.println("TThumbnailRefresher - Shutting down");
+		//System.out.println("TThumbnailRefresher - Shutting down");
 	}
 }

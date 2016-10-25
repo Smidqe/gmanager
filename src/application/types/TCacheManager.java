@@ -5,7 +5,16 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+
 import application.extensions.arrays;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.Image;
+
+/*
+	TODO:
+		- Make better save/load methods, currently we can't apply every class to a binary file due to serialization limitations
+ */
 
 public class TCacheManager 
 {
@@ -31,7 +40,6 @@ public class TCacheManager
 		
 		for (int i = 0; i < objects.size(); i++)
 			save(objects.get(i), UUIDs.get(i));
-
 	}
 	
 	public <T extends Serializable> void save(T object, String UUID) throws IOException
@@ -67,4 +75,38 @@ public class TCacheManager
 		return arrays.exists(ids, ID);
 	}
 
+	//JavaFX images cannot be serialized, therefore they cannot be saved by normal means
+	public void saveFXImage(Image __image, String ID) throws Exception 
+	{
+		boolean success = ImageIO.write(SwingFXUtils.fromFXImage(__image, null), "png", new TCacheFile(__settings.getPaths().get("cache"), ID));
+
+		if (success)
+			ids.add(ID);
+		else
+			throw new Exception("TCacheManager: Image was not saved");
+	}
+	
+	public Image readFXImage(String ID) throws IOException
+	{
+		int pos = -1;
+		
+		if ((pos = arrays.position(ids, ID)) == -1)
+			return null;
+
+		return (Image) SwingFXUtils.toFXImage(ImageIO.read(getFileByID(ids.get(pos))), null);
+	}
+	
+	public void clear() throws IOException
+	{
+		TCacheFile temp = null;
+		for (String ID : ids)
+		{
+			System.out.println("TCacherManager: Deleting: " + ID);
+			
+			temp = new TCacheFile(__settings.getPath("cache"), false, ID);
+			temp.delete();
+		}
+		
+		ids.clear();
+	}
 }

@@ -80,6 +80,11 @@ public class TSite
 		return null;
 	}
 	
+	public void setAuthentication(boolean value)
+	{
+		this.authenticate = value;
+	}
+	
 	public boolean needsAuthentication()
 	{
 		return this.authenticate;

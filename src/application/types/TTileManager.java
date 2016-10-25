@@ -60,7 +60,7 @@ public class TTileManager
 		return this.images;
 	}
 
-	public TImageContainer getContainerByNode(Node node)
+	public synchronized TImageContainer getContainerByNode(Node node)
 	{
 		if (node == null)
 			return null;

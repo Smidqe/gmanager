@@ -2,15 +2,20 @@ package application.types.custom;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import application.types.TGrabber;
 import application.types.TGrabber.Status;
+import application.types.TImageSaver;
 import application.types.factories.FThreadFactory;
 import application.types.TSite;
 import application.types.TThumbnailRefresher;
@@ -37,11 +42,13 @@ public class TGallery
 	private TTileManager __manager;
 	private TGrabber __grabber;
 	private TThumbnailRefresher __refresher;
+	private TImageSaver __saver;
 	private TSite __site;
 	private int __current_page = 1;
 	
 	private ExecutorService __threads;
 	private BlockingDeque<String> __action_deque, __grabber_deque;
+	private List<Future<?>> __futures;
 	
 	private boolean __allow_refresh;
 	
@@ -52,6 +59,7 @@ public class TGallery
 		//create the deques
 		this.__action_deque = new LinkedBlockingDeque<String>();
 		this.__grabber_deque = new LinkedBlockingDeque<String>();
+		this.__futures = new ArrayList<Future<?>>();
 		
 		//initialize some other necessary variables
 		this.__tiles = tiles;
@@ -59,6 +67,7 @@ public class TGallery
 		this.__manager = new TTileManager(this.__tiles, this.__action_deque);
 		this.__grabber = new TGrabber(this.__manager, this.__grabber_deque); 
 		this.__refresher = new TThumbnailRefresher(this, this.__action_deque);		
+		this.__saver = new TImageSaver(this);
 		
 		//bind the managers deque to grabbers deque
 		
@@ -76,13 +85,13 @@ public class TGallery
 		
 		//add the listeners for resizing and scrolling
 		__container.vvalueProperty().addListener(createScrollListener());
-		//__container.widthProperty().addListener(createResizeListener());
-		//__container.heightProperty().addListener(createResizeListener());
+		__container.widthProperty().addListener(createResizeListener());
+		__container.heightProperty().addListener(createResizeListener());
 		
 		//Add the refresher.
-		this.__threads.submit(this.__refresher);
-		this.__threads.submit(this.__grabber);
-
+		__futures.add(this.__threads.submit(this.__refresher));
+		__futures.add(this.__threads.submit(this.__grabber));
+		__futures.add(this.__threads.submit(this.__saver));
 	}
 
 	private ChangeListener<Number> createResizeListener()
@@ -107,7 +116,7 @@ public class TGallery
 					{
 						try 
 						{
-							if (__refresher.getStatus() == TThumbnailRefresher.Status.IDLE)
+							if ((__refresher.getStatus() == TThumbnailRefresher.Status.IDLE) && __allow_refresh)
 								__action_deque.put("");
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
@@ -131,7 +140,7 @@ public class TGallery
 				try {					
 					//make sure that we don't overwhelm the refresher
 					
-					System.out.println("TGallery: __allow_refreshing: " + __allow_refresh);
+					//System.out.println("TGallery: __allow_refreshing: " + __allow_refresh);
 					
 					if ((__refresher.getStatus() == TThumbnailRefresher.Status.IDLE) && __allow_refresh)
 						__action_deque.put("");
@@ -186,17 +195,28 @@ public class TGallery
 		return -1;
 	}
 
+	public TThumbnailRefresher getRefresher()
+	{
+		return this.__refresher;
+	}
+	
 	public void allowRefreshing(boolean value)
 	{
 		this.__allow_refresh = value;
 	}
 	
-	public void stop() throws InterruptedException 
+	public void stop() throws InterruptedException, ExecutionException 
 	{
 		__grabber.stop();
 		__refresher.stop();
+		__saver.stop();
 		
 		__action_deque.put("");
+		__grabber_deque.put("");
+
+		for (Future<?> future: __futures)
+			future.get();
+
 		__threads.shutdown();
 	}
 }

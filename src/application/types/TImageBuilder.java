@@ -36,6 +36,15 @@ public class TImageBuilder implements Callable<TImage>{
 				if (strings.contains(skippable, key, false)) 
 					continue;
 			
+			/*
+				There are few cases what information.get() can be
+					- List
+					- Map
+					- Value
+			
+				
+			 */
+			
 			if (information.get(key) instanceof List)
 				object.setProperty(Maps.MAP_PROPERTIES, key, ((List<String>) information.get(key)).toString());
 			else if (information.get(key) instanceof Map)
@@ -59,7 +68,7 @@ public class TImageBuilder implements Callable<TImage>{
 		
 		keys = object.getProperties(Maps.MAP_PROPERTIES).keySet();
 		
-		//fix the urls (
+		//fix the urls, for example derpibooru doesn't have http/https in thumbnail/image links
 		for (String key : keys)
 		{
 			String value = object.getProperty(Maps.MAP_PROPERTIES, key);

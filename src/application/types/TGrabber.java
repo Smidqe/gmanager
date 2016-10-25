@@ -1,5 +1,11 @@
 package application.types;
 
+/*
+	TODO:
+		- Refactor this
+		- Possibly move the imageloading to different threads?
+ */
+
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +29,7 @@ import javafx.scene.image.ImageView;
 
 public class TGrabber extends Observable implements Runnable
 {
-	public enum Status {IDLE, RUNNING};
+	public enum Status {IDLE, RUNNING, ERROR};
 	
 	private TTileManager __tiles;
 	private URL url;
@@ -79,17 +85,16 @@ public class TGrabber extends Observable implements Runnable
 				if (IWebCodes.inRange(response, Codes.SUCCESS))
 				{
 
-					System.out.println("URL: " + this.url);
+					//System.out.println("URL: " + this.url);
 					
 					JSONObject object = connections.getJSON(this.url);
 					
-					
-					Future<List<Map<String, Object>>> parsed = __executor.submit(new TParser(object));
-					List<Map<String, Object>> list = parsed.get();
+					List<Map<String, Object>> list = __executor.submit(new TParser(object)).get();
 					
 					List<Future<TImage>> images = new ArrayList<Future<TImage>>();
 					List<TImage> finals = new ArrayList<TImage>();
 					
+					//Don't combine these, this way all of the images can be built at the same time.
 					for (Map<String, Object> map : list)
 						images.add(__executor.submit(new TImageBuilder(map)));
 				
@@ -100,13 +105,11 @@ public class TGrabber extends Observable implements Runnable
 					for (TImage image : finals)
 						containers.add(new TImageContainer(image, new ImageView()));
 					
+					//has to happen on JavaFX thread, otherwise there will be problems
 					Platform.runLater(new Runnable() {
 						
 						@Override
 						public void run() {
-							// TODO Auto-generated method stub
-							System.out.println("Running on FX thread: adding more tiles");
-							
 							try {
 								__tiles.add(containers);
 								//__refresher.put("");
@@ -122,6 +125,12 @@ public class TGrabber extends Observable implements Runnable
 				{
 					System.out.println("TGrabber - Ping resulted: " + response + ", grabber will not run.");
 				}
+				
+				if (this.__status == Status.ERROR)
+				{
+					//possibly wait on a some boolean value to become true, perhaps a global boolean gGrabberRunning?
+				}
+				
 				
 				this.__status = Status.IDLE;
 				

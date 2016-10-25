@@ -13,7 +13,7 @@ public class TCacheFile extends TBinaryFile{
 	private String UUID;
 
 	public TCacheFile(String pathname, boolean create, String UUID) throws IOException {
-		super(pathname, create);
+		super(pathname + UUID, create);
 		
 		this.UUID = UUID;
 	}
@@ -22,12 +22,7 @@ public class TCacheFile extends TBinaryFile{
 	{
 		this(path, true, UUID);
 	}
-	
-	public boolean exists()
-	{
-		return this.exists();
-	}
-	
+
 	public <T extends Serializable> void write(T object) throws FileNotFoundException, IOException
 	{
 		if (object == null)
