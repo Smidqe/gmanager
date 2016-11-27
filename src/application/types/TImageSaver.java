@@ -1,28 +1,43 @@
 package application.types;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import application.types.TImage.Maps;
-import application.types.custom.TGallery;
-import javafx.collections.ObservableList;
-import javafx.scene.Node;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import application.types.images.container.TImageContainer;
+
 
 public class TImageSaver implements Runnable
 {
 	public enum SaverStatus {IDLE, RUNNING, ERROR};
 	
 	private boolean __stop = false;
-	private TGallery __gallery;
 	private TCacheManager __manager;
+	private BlockingDeque<TImageContainer> __images_to_save;
 	
-	public TImageSaver(TGallery gallery) 
+	public TImageSaver() 
 	{
-		this.__gallery = gallery;
-		this.__manager = TCacheManager.instance();
+		this.__images_to_save = new LinkedBlockingDeque<TImageContainer>();
 	}
 
+	public void add(TImageContainer container) throws InterruptedException
+	{
+		this.__images_to_save.put(container);
+	}
+	
+	public void add(List<TImageContainer> list) throws InterruptedException
+	{
+		for (TImageContainer container: list)
+			add(container);
+	}
+	
+	public void bind(TCacheManager manager)
+	{
+		this.__manager = manager;
+	}
+	
 	public void stop()
 	{
 		this.__stop = true;
@@ -31,47 +46,49 @@ public class TImageSaver implements Runnable
 	@Override
 	public void run() 
 	{
-		Image img = null;
-		
+		TImageContainer container = null;
+
 		// TODO Auto-generated method stub
 		while (!this.__stop)
 		{
-			System.out.println("Saver: Running");
+			container = null;
 			
-			ObservableList<Node> nodes = __gallery.getTilePane().getChildren();
-
-			System.out.println("Saver: Amount of nodes: " + nodes.size());
-			
-			for (Node node : nodes)
+			while (!this.__stop)
 			{
-				TImageContainer container = __gallery.getManager().getContainerByNode(node);
+				//check if there is any items in the deque
+					try {
+						container = __images_to_save.take();
+					} catch (InterruptedException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
 				
-				System.out.println("Saver: Container: " + container);
-				
-				if (TCacheManager.instance().exists(container.getUUID()))
-				{
-					System.out.println("Node is already in cache system");
-					continue;
-				}
-				
-				System.out.println("Saver: Image visible: " + container.isVisible());
-				
-				if (container.isVisible())
-					img = ((ImageView) node).getImage();
-				else
-					img = new Image(container.getImage().getProperty(Maps.MAP_IMAGES, "thumb_small"), 150, 150, true, false, false);
 				
 				try {
-					__manager.saveFXImage(img, container.getUUID());
-				} catch (Exception e) {
+					System.out.println("Waiting for it to finish.");
+					
+					while (container.getImageView().getImage() == null)
+						Thread.sleep(1);
+				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
+			
+			
+			if (this.__stop)
+				break;
 
+			System.out.println("Saver: Running");
+			
+			synchronized (this) {
+				this.notify();
+			}
+		
+			
 			try {
-				Thread.sleep(5000);
-			} catch (InterruptedException e) {
+				__manager.saveFXImage(container.getImageView().getImage(), container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "id"));
+			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

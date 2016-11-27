@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -20,7 +19,10 @@ import java.util.concurrent.Future;
 import org.json.simple.JSONObject;
 
 import application.extensions.connections;
+import application.types.custom.TGallery;
+import application.types.custom.TGallery.Action;
 import application.types.factories.FThreadFactory;
+import application.types.images.container.TImageContainer;
 import application.types.interfaces.IWebCodes;
 import application.types.interfaces.IWebCodes.Codes;
 import javafx.application.Platform;
@@ -34,14 +36,14 @@ public class TGrabber extends Observable implements Runnable
 	private TTileManager __tiles;
 	private URL url;
 	private boolean stop;
-	private BlockingDeque<String> __grabber;
+	private BlockingDeque<Action> __grabber;
 	private Status __status;
 	
 	
-	public TGrabber(TTileManager manager, BlockingDeque<String> grabber) 
+	public TGrabber(TTileManager manager, BlockingDeque<Action> __grabber_deque) 
 	{
 		this.__tiles = manager;
-		this.__grabber = grabber;
+		this.__grabber = __grabber_deque;
 		
 		this.url = null;
 		this.__status = Status.IDLE;
@@ -52,7 +54,7 @@ public class TGrabber extends Observable implements Runnable
 		this.url = url;
 		
 		if (forceGrab)
-			this.__grabber.put("Changed");
+			this.__grabber.put(TGallery.Action.GRABBER);
 	}
 	
 	public void stop()
@@ -70,8 +72,11 @@ public class TGrabber extends Observable implements Runnable
 		// TODO Auto-generated method stub
 		ExecutorService __executor = Executors.newCachedThreadPool(new FThreadFactory("TGrabber", "__executor", true));
 
+		TGallery.Action __head = null;
+		
 		while (!this.stop)
 		{
+			__head = null;
 			this.__status = Status.RUNNING;
 			
 			System.out.println("TGrabber - Starting loading, URL: " + this.url);
@@ -113,7 +118,7 @@ public class TGrabber extends Observable implements Runnable
 							try {
 								__tiles.add(containers);
 								//__refresher.put("");
-							} catch (InterruptedException | ExecutionException e) {
+							} catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
@@ -134,7 +139,31 @@ public class TGrabber extends Observable implements Runnable
 				
 				this.__status = Status.IDLE;
 				
-				__grabber.take();
+				try {
+					while (__head == null)
+					{
+						__head = __grabber.peek();
+						
+						if (__head != null && __head.equals(TGallery.Action.SHUTDOWN))
+						{
+							this.stop = true;
+							break;
+						}
+						
+						if (__head != null && __head.equals(TGallery.Action.GRABBER))
+						{
+							__grabber.take();
+							break;
+						}
+						else
+							__head = null;
+						
+						Thread.sleep(1);
+					}
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block

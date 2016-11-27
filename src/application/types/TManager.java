@@ -3,6 +3,8 @@ package application.types;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import application.types.sites.TSite;
+
 /*
 	TODO:
 		- Is this completely unnecessary?
@@ -28,7 +30,7 @@ public class TManager
 			//normally it would load necessary information from ini files.
 			this.site.setURL("images", new URL("https://derpibooru.org/images.json"));
 			//this.tileManager = TTileManager.instance();
-			this.cacheManager = TCacheManager.instance();
+			this.cacheManager = new TCacheManager();
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -13,11 +13,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import application.types.TCacheManager;
 import application.types.TGrabber;
 import application.types.TGrabber.Status;
 import application.types.TImageSaver;
 import application.types.factories.FThreadFactory;
-import application.types.TSite;
+import application.types.sites.TSite;
 import application.types.TThumbnailRefresher;
 import application.types.TTileManager;
 import javafx.beans.value.ChangeListener;
@@ -29,25 +30,26 @@ import javafx.scene.layout.TilePane;
 
 /*
 	TODO:
-		- Combine deques to a single one
 		- 
  */
 
 public class TGallery
 {
 	public enum Count {IMAGES, PAGES};
+	public enum Action {REFRESHER, GRABBER, SHUTDOWN};
 	
 	private TilePane __tiles;
 	private ScrollPane __container;
 	private TTileManager __manager;
 	private TGrabber __grabber;
 	private TThumbnailRefresher __refresher;
-	private TImageSaver __saver;
+	private TCacheManager __cache;
+	private TImageSaver __saver; //TODO: Remove this once I've figured something out
 	private TSite __site;
 	private int __current_page = 1;
 	
 	private ExecutorService __threads;
-	private BlockingDeque<String> __action_deque, __grabber_deque;
+	private volatile BlockingDeque<Action> __action_deque;
 	private List<Future<?>> __futures;
 	
 	private boolean __allow_refresh;
@@ -57,17 +59,16 @@ public class TGallery
 		this.__allow_refresh = true;
 		
 		//create the deques
-		this.__action_deque = new LinkedBlockingDeque<String>();
-		this.__grabber_deque = new LinkedBlockingDeque<String>();
+		this.__action_deque = new LinkedBlockingDeque<Action>();
 		this.__futures = new ArrayList<Future<?>>();
 		
 		//initialize some other necessary variables
 		this.__tiles = tiles;
 		this.__container = container;
-		this.__manager = new TTileManager(this.__tiles, this.__action_deque);
-		this.__grabber = new TGrabber(this.__manager, this.__grabber_deque); 
+		this.__saver = new TImageSaver();
+		this.__manager = new TTileManager(this.__tiles, this.__action_deque, this.__saver);
+		this.__grabber = new TGrabber(this.__manager, this.__action_deque); 
 		this.__refresher = new TThumbnailRefresher(this, this.__action_deque);		
-		this.__saver = new TImageSaver(this);
 		
 		//bind the managers deque to grabbers deque
 		
@@ -75,11 +76,12 @@ public class TGallery
 		//this.__tiles.prefHeightProperty().bind(this.__container.heightProperty());
 		//this.__tiles.prefWidthProperty().bind(this.__container.widthProperty());
 		
-		//create thread for the refresher
+		//create a threadpool for the subthreads
 		this.__threads = Executors.newCachedThreadPool(new FThreadFactory("TGallery", "Subthreads", true));
 		
 		//TODO: For testing! Remove once finished;
 		this.__site = new TSite();
+		this.__cache = TCacheManager.instance();
 		this.__site.setURL("images", new URL("https://derpibooru.org/images.json"));
 		this.__grabber.setURL(this.__site.getURL("images", "?page=", __current_page), false);
 		
@@ -91,7 +93,7 @@ public class TGallery
 		//Add the refresher.
 		__futures.add(this.__threads.submit(this.__refresher));
 		__futures.add(this.__threads.submit(this.__grabber));
-		__futures.add(this.__threads.submit(this.__saver));
+		__futures.add(this.__threads.submit(this.__cache));
 	}
 
 	private ChangeListener<Number> createResizeListener()
@@ -117,7 +119,7 @@ public class TGallery
 						try 
 						{
 							if ((__refresher.getStatus() == TThumbnailRefresher.Status.IDLE) && __allow_refresh)
-								__action_deque.put("");
+								__action_deque.put(Action.REFRESHER);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -143,13 +145,13 @@ public class TGallery
 					//System.out.println("TGallery: __allow_refreshing: " + __allow_refresh);
 					
 					if ((__refresher.getStatus() == TThumbnailRefresher.Status.IDLE) && __allow_refresh)
-						__action_deque.put("");
+						__action_deque.put(Action.REFRESHER);
 				
 					
 					if ((valueNew.doubleValue() == 1.0) && (__grabber.getStatus() == Status.IDLE))
 					{
 						__grabber.setURL(__site.getURL("images", "?page=", ++__current_page), false);
-						__grabber_deque.put("ss");
+						__action_deque.put(Action.GRABBER);
 					}
 				} catch (InterruptedException e1) {
 					// TODO Auto-generated catch block
@@ -210,13 +212,14 @@ public class TGallery
 		__grabber.stop();
 		__refresher.stop();
 		__saver.stop();
+		__cache.stop();
 		
-		__action_deque.put("");
-		__grabber_deque.put("");
+		__action_deque.put(Action.SHUTDOWN);
 
 		for (Future<?> future: __futures)
 			future.get();
 
 		__threads.shutdown();
+		
 	}
 }

@@ -49,7 +49,7 @@ public class arrays {
 	
 	public static <T> boolean same(Object object, Class<T> compare)
 	{
-		return (compare.isInstance(object));
+		return compare.isInstance(object);
 	}
 	
 	public static <T> boolean same(List<Class<T>> list, Object object)

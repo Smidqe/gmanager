@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import application.types.sites.TSite;
 import libFileExtensions.files.TIniFile;
 
 public class TSettings 

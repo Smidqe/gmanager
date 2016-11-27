@@ -5,8 +5,8 @@ import java.util.List;
 
 import application.extensions.integers;
 
-public class IWebCodes {
-
+public class IWebCodes 
+{
 	public enum Codes 
 	{
 		INFORMATIONAL (100, 102),

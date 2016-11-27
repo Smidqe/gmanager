@@ -14,9 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import application.extensions.arrays;
 import application.types.custom.TGallery;
+import application.types.custom.TGallery.Action;
+import application.types.images.container.TImageContainer;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -29,16 +33,18 @@ public class TThumbnailRefresher implements Runnable
 	private List<Node> hidden, showing;
 	private boolean stop = false;
 
-	private BlockingDeque<String> __deque;
+	private BlockingDeque<TGallery.Action> __deque;
 	private Status __status;
+	private ExecutorService __executor;
 	
-	public TThumbnailRefresher(TGallery manager, BlockingDeque<String> deque) 
+	public TThumbnailRefresher(TGallery manager, BlockingDeque<Action> __action_deque) 
 	{
 		this.hidden = new ArrayList<Node>();
 		this.showing = new ArrayList<Node>();
 		
 		this.__gallery = manager;
-		this.__deque = deque;
+		this.__deque = __action_deque;
+		this.__executor = Executors.newCachedThreadPool();
 	}
 
 	public synchronized boolean inViewport(Node node)
@@ -48,11 +54,20 @@ public class TThumbnailRefresher implements Runnable
 	
 	private void release(List<Node> nodes) throws InterruptedException, ExecutionException
 	{
+		System.out.println("Amount of nodes:: release:: " + nodes.size());
+		
 		if (nodes.size() == 0)
 			return;
 		
+		TTileManager __manager = __gallery.getManager();
+		TImageContainer __container = null;
+		
 		for (Node node : nodes)
-			__gallery.getManager().getContainerByNode(node).arm(false, "");
+		{
+			__container = __manager.getContainerByNode(node);
+			__container.show(false);
+			__container.run();
+		}
 	}
 	
 	public void scan()
@@ -89,12 +104,20 @@ public class TThumbnailRefresher implements Runnable
 	//move this one to a different thread?
 	private void load(List<Node> nodes) throws Exception
 	{
+		System.out.println("Amount of nodes:: load:: " + nodes.size());
+
+		
 		if (nodes.size() == 0)
 			return;
-
+		TImageContainer __container = null;
  		for (Node node : nodes)
-			__gallery.getManager().getContainerByNode(node).arm(true, "thumb_small");
-	}
+ 		{
+			__container = __gallery.getManager().getContainerByNode(node);
+			__container.show(true);
+			
+			__executor.submit(__container);
+ 		}
+ 	}
 
 	public void stop()
 	{
@@ -110,14 +133,42 @@ public class TThumbnailRefresher implements Runnable
 	public synchronized void run() 
 	{
 		
+		TGallery.Action __head = null;
+		
 		while (!stop)
 		{
+			__head = null;
+			
 			try {
-				this.__deque.take();
+				while (__head == null)
+				{
+					__head = __deque.peek();
+					
+					if (__head != null && __head.equals(TGallery.Action.SHUTDOWN))
+					{
+						this.stop = true;
+						break;
+					}
+					
+					if (__head != null && __head.equals(TGallery.Action.REFRESHER))
+					{
+						__deque.take();
+						break;
+					}
+					else
+						__head = null;
+					
+					Thread.sleep(1);
+				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			
+			if (stop)
+				break;
+			
+			System.out.println("Scanner: Running");
 			
 			this.__status = Status.SCANNING;
 			scan();
