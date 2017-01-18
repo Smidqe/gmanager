@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -16,8 +15,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 import application.types.TCacheManager;
 import application.types.TGrabber;
 import application.types.TGrabber.Status;
-import application.types.TImageSaver;
 import application.types.factories.FThreadFactory;
+import application.types.images.container.TImageContainer;
 import application.types.sites.TSite;
 import application.types.TThumbnailRefresher;
 import application.types.TTileManager;
@@ -44,12 +43,13 @@ public class TGallery
 	private TGrabber __grabber;
 	private TThumbnailRefresher __refresher;
 	private TCacheManager __cache;
-	private TImageSaver __saver; //TODO: Remove this once I've figured something out
 	private TSite __site;
 	private int __current_page = 1;
 	
 	private ExecutorService __threads;
 	private volatile BlockingDeque<Action> __action_deque;
+	
+	//meant for the background threads
 	private List<Future<?>> __futures;
 	
 	private boolean __allow_refresh;
@@ -63,25 +63,19 @@ public class TGallery
 		this.__futures = new ArrayList<Future<?>>();
 		
 		//initialize some other necessary variables
+		this.__cache = TCacheManager.instance();
 		this.__tiles = tiles;
 		this.__container = container;
-		this.__saver = new TImageSaver();
-		this.__manager = new TTileManager(this.__tiles, this.__action_deque, this.__saver);
+		this.__manager = new TTileManager(this.__tiles, this.__action_deque, this.__cache);
 		this.__grabber = new TGrabber(this.__manager, this.__action_deque); 
 		this.__refresher = new TThumbnailRefresher(this, this.__action_deque);		
 		
-		//bind the managers deque to grabbers deque
-		
-		//bind the dimensions of the tilepane to the parent
-		//this.__tiles.prefHeightProperty().bind(this.__container.heightProperty());
-		//this.__tiles.prefWidthProperty().bind(this.__container.widthProperty());
-		
+
 		//create a threadpool for the subthreads
 		this.__threads = Executors.newCachedThreadPool(new FThreadFactory("TGallery", "Subthreads", true));
 		
 		//TODO: For testing! Remove once finished;
 		this.__site = new TSite();
-		this.__cache = TCacheManager.instance();
 		this.__site.setURL("images", new URL("https://derpibooru.org/images.json"));
 		this.__grabber.setURL(this.__site.getURL("images", "?page=", __current_page), false);
 		
@@ -94,6 +88,7 @@ public class TGallery
 		__futures.add(this.__threads.submit(this.__refresher));
 		__futures.add(this.__threads.submit(this.__grabber));
 		__futures.add(this.__threads.submit(this.__cache));
+		__futures.add(this.__threads.submit(this.__manager));
 	}
 
 	private ChangeListener<Number> createResizeListener()
@@ -140,14 +135,13 @@ public class TGallery
 			public synchronized void changed(ObservableValue<? extends Number> arg0, Number arg1, Number valueNew) 
 			{
 				try {					
+					__allow_refresh = (__manager.getStatus() != TTileManager.Status.RUNNING);
+						
+					
 					//make sure that we don't overwhelm the refresher
-					
-					//System.out.println("TGallery: __allow_refreshing: " + __allow_refresh);
-					
 					if ((__refresher.getStatus() == TThumbnailRefresher.Status.IDLE) && __allow_refresh)
 						__action_deque.put(Action.REFRESHER);
-				
-					
+
 					if ((valueNew.doubleValue() == 1.0) && (__grabber.getStatus() == Status.IDLE))
 					{
 						__grabber.setURL(__site.getURL("images", "?page=", ++__current_page), false);
@@ -207,14 +201,14 @@ public class TGallery
 		this.__allow_refresh = value;
 	}
 	
-	public void stop() throws InterruptedException, ExecutionException 
+	public void stop() throws Exception 
 	{
 		__grabber.stop();
 		__refresher.stop();
-		__saver.stop();
 		__cache.stop();
-		
+		__manager.stop();
 		__action_deque.put(Action.SHUTDOWN);
+		__manager.add(new TImageContainer(null, null));
 
 		for (Future<?> future: __futures)
 			future.get();

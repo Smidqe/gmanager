@@ -2,133 +2,113 @@ package application.types;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import javax.imageio.ImageIO;
-
 import application.extensions.arrays;
-import javafx.embed.swing.SwingFXUtils;
+import application.types.images.saver.TImageIOHandler;
 import javafx.scene.image.Image;
 
 /*
 	TODO:
-		- Make better save/load methods, currently we can't apply every class to a binary file due to serialization limitations
-		- Make it non singleton, we need to have multiple cache folders (if there is multiple) 
+		- Clean this POS.
+		- Probably 
  */
 
 public class TCacheManager implements Runnable
 {
-	public enum Methods {METHOD_SAVE, METHOD_LOAD, METHOD_STOP}
-	
-	
-	private List<String> ids;
+	public Object lock = new Object();
 	private static TCacheManager __self = new TCacheManager();
 	private TSettings __settings = TSettings.instance();
+	
 	private boolean __stop;
-	private BlockingDeque<Map<String, Image>> __images_to_save;
-	private BlockingDeque<String> __images_to_read;
-	private BlockingDeque<Methods> __method;
-	private BlockingDeque<Map<String, Image>> __loaded;
-
+	private BlockingDeque<TCacheJob> __data;
+	
+	private Map<String, String> ids;
+	private Map<String, Future<TResult<Image>>> __output;
+	//the executor for IO handlers.
+	private ExecutorService __executor;
+	
 	
 	public TCacheManager() 
 	{
-		this.ids = new ArrayList<String>();
+		this.ids = new WeakHashMap<String, String>();
 		this.__stop = false;
-		this.__images_to_save = new LinkedBlockingDeque<Map<String, Image>>();
-		this.__images_to_read = new LinkedBlockingDeque<String>();
-		this.__method = new LinkedBlockingDeque<Methods>();
-		this.__loaded = new LinkedBlockingDeque<Map<String, Image>>();
-	}
-	
-	//this should serialize all the objects(classes) that you have
-	@SuppressWarnings("unused")
-	private <T> byte[] serialize(T object)
-	{
-		return null;
-	}
-	
-	public void add(List<Image> imgs, List<String> IDs) throws InterruptedException
-	{
-		//check if they are not the same size;
 		
-		for (int i = 0; i < imgs.size(); i++)
-		{
-			if (exists(IDs.get(i)))
-				continue;
-			WeakHashMap<String, Image> map = new WeakHashMap<String, Image>();
-			map.put(IDs.get(i), imgs.get(i));
-			this.__images_to_save.put(map);
-		}
+		this.__output = new WeakHashMap<String, Future<TResult<Image>>>();
+		this.__executor = Executors.newCachedThreadPool();
+		this.__data = new LinkedBlockingDeque<TCacheJob>();
 	}
 	
-	public void add(Image img, String ID) throws InterruptedException
+	public void save(Image img, String ID, String type) throws InterruptedException
 	{
-		add(Arrays.asList(img), Arrays.asList(ID));
+		save(Arrays.asList(img), Arrays.asList(ID), Arrays.asList(type));
 	}
 	
-	public void start(Methods method) throws InterruptedException
+	//return a list of futures, so that we can wait while they are being written (before showing them, prevents nulls)
+	public void save(List<Image> images, List<String> IDs, List<String> types) throws InterruptedException
 	{
-		this.__method.put(method);
-	}
+		if (images.size() != IDs.size())
+			return;
 
-	public void load(String iD) throws InterruptedException 
-	{
-		this.__images_to_read.put(iD);
+		for (int i = 0; i < images.size(); i++)
+			this.__data.put(createJob(TCacheJob.Method.SAVE, IDs.get(i), images.get(i), types.get(i)));
 	}
 	
-	public BlockingDeque<Map<String, Image>> getLoaded() 
+	public TCacheJob createJob(TCacheJob.Method method, String ID, Image img, String type)
 	{
-		return __loaded;
+		TCacheJob job = new TCacheJob();
+		
+		job.setID(ID);
+		job.setImage(img);
+		job.setMethod(method);
+		job.setType(type);
+		return job;
+	}
+	
+	public void load(String ID, String type) throws InterruptedException
+	{
+		load(Arrays.asList(ID), Arrays.asList(type));
+	}
+	
+	public void load(List<String> IDs, List<String> types) throws InterruptedException
+	{
+		for (int i = 0; i < IDs.size(); i++)
+			this.__data.put(createJob(TCacheJob.Method.LOAD, IDs.get(i), null, types.get(i)));
+		
+		System.out.println("TCacheManager.load(): Added jobs");
+	}
+	
+	public synchronized Map<String, Future<TResult<Image>>> getCurrentJobs()
+	{
+		return this.__output;
 	}
 	
 	public boolean exists(String ID) 
 	{
-		return arrays.exists(ids, ID);
+		for (String id : this.ids.keySet())
+			if (id.equals(ID))
+				return true;
+		
+		return false;
 	}
 
-	//JavaFX images cannot be serialized, therefore they cannot be saved by normal means, I want to replace this with a more general save method
-	public void saveFXImage(Image __image, String ID) throws Exception 
-	{
-		if (__image == null)
-			System.out.println("Image is null");
-		
-		//System.out.println("Image: " + __image.toString() + ", ID: " + ID);
-		
-		boolean success = ImageIO.write(SwingFXUtils.fromFXImage(__image, null), "png", new File(__settings.getPaths().get("cache") + ID));
-
-		System.out.println("Image writing: " + success);
-		
-		if (success)
-			ids.add(ID);
-		else
-			throw new Exception("TCacheManager: Image was not saved");
-	}
-	
-	public Image readFXImage(String ID) throws IOException
-	{
-		if ((arrays.position(ids, ID)) == -1)
-			return null;
-
-		return (Image) SwingFXUtils.toFXImage(ImageIO.read(new File(__settings.getPaths().get("cache") + ID)), null);
-	}
-	
 	public void clear() throws IOException
 	{
 		File temp = null;
-		for (String ID : ids)
+		for (String ID : ids.keySet())
 		{
 			System.out.println("TCacherManager: Deleting: " + ID);
 			
-			temp = new File(__settings.getPath("cache") + ID);
+			temp = new File(__settings.getPath("cache") + ID + ids.get(ID));
 			temp.delete();
 		}
 		
@@ -141,82 +121,51 @@ public class TCacheManager implements Runnable
 	}
 
 	@Override
-	public void run() {
+	public void run() 
+	{
+		TCacheJob job;
+		TImageIOHandler __handler = null;
+		boolean __load;
+		Future<TResult<Image>> __future = null;
 		
-		Map<String, Image> img = null;
-		Methods value = null;
+		TImageIOHandler.Method __method;
+		
 		while (!this.__stop)
 		{
 			try {
-				value = __method.take();
-			} catch (InterruptedException e1) {
+				job = __data.take();
+				
+				if (this.__stop || job.getID().equals(""))
+					break;
+				
+				__load = job.getMethod() == TCacheJob.Method.LOAD;
+				__method = __load ? TImageIOHandler.Method.LOAD : TImageIOHandler.Method.SAVE;
+				__handler = new TImageIOHandler(__method, __settings.getPath("cache") + job.getID(), job.getType(), job.getImage(), job.getType());
+
+				//Add it to current jobs
+				__future = __executor.submit(__handler);
+				this.__output.put(job.getID(), __future);
+				this.ids.put(job.getID(), job.getType());
+				
+				System.out.println("Notifying the lock");
+				synchronized (lock) {
+					lock.notify();
+				}
+				
+			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				e.printStackTrace();
 			}
-			
-			if (value == Methods.METHOD_STOP || this.__stop)
-			{
-				try {
-					this.clear();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-				break;
-			}	
-			
-			if (value == Methods.METHOD_SAVE)
-			{
-				try {
-					img = __images_to_save.take();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-				try {
-					saveFXImage(img.get(img.keySet().toArray()[0]), (String) img.keySet().toArray()[0]);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			else
-			{
-				String ID = null;
-				Image __image = null;
-				
-				try {
-					ID = __images_to_read.take();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				try {
-					__image = readFXImage(ID);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}		
-				
-				Map<String, Image> map = new WeakHashMap<String, Image>();
-				
-				map.put(ID, __image);
-				try {
-					__loaded.put(map);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			
 		}
+		
+		System.out.println("TCacheManager: Shutting down");
 	}
 
-	public void stop() throws InterruptedException 
+	public void stop() throws InterruptedException, IOException 
 	{
 		this.__stop = true;
-		this.__method.put(Methods.METHOD_STOP);
+		this.__data.put(new TCacheJob("", null, ""));
+		
+		clear();
 	}
 }

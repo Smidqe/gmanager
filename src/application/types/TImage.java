@@ -1,19 +1,12 @@
 package application.types;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import application.types.TIDCreator;
-
-public class TImage implements Serializable
+public class TImage
 {
-	public enum Maps {MAP_PROPERTIES, MAP_IMAGES};
-	
-	private static final long serialVersionUID = 1L;
+	public enum Maps {MAP_PROPERTIES, MAP_IMAGES};;
 	
 	private Map<String, String> properties;
 	private Map<String, String> images;
@@ -62,26 +55,13 @@ public class TImage implements Serializable
 			setProperty(map, keys.get(i), values.get(i));
 	}
 
-	public synchronized boolean compare(String image)
-	{
-		return (this.images.get("thumbnail").equals(image) || this.images.get("full").equals(image));
-	}
-	
 	public synchronized boolean compare(TImage image)
 	{
-		return (image.images.get("thumbnail").equals(this.images.get("thumbnail")) && image.images.get("full").equals(this.images.get("full")));
+		return (this.properties.get("sha512_hash").equals(image.properties.get("sha512_hash")));
 	}
 	
 	public synchronized Map<String, String> getImageURLs()
 	{
 		return this.images;
-	}
-	
-	public synchronized void createID() throws Exception
-	{		
-		ExecutorService service = Executors.newSingleThreadExecutor();
-
-		this.properties.put("ID", service.submit(new TIDCreator<>(this)).get());
-		service.shutdown();
 	}
 }

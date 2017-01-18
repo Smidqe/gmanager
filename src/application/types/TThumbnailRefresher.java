@@ -139,11 +139,13 @@ public class TThumbnailRefresher implements Runnable
 		{
 			__head = null;
 			
+			//wait until we have something to do.
 			try {
 				while (__head == null)
 				{
 					__head = __deque.peek();
-					
+
+					//I could combine these two __head != null conditions, but meh...
 					if (__head != null && __head.equals(TGallery.Action.SHUTDOWN))
 					{
 						this.stop = true;
@@ -176,8 +178,6 @@ public class TThumbnailRefresher implements Runnable
 			this.__status = Status.RUNNING;
 			if (this.hidden.size() > 0 || this.showing.size() > 0)
 			{
-				//System.out.println("Refresher - Starting loading/offloading");
-				
 				try {
 					load(this.showing);
 					release(this.hidden);
@@ -190,7 +190,5 @@ public class TThumbnailRefresher implements Runnable
 			
 			this.__status = Status.IDLE;
 		}
-		
-		//System.out.println("TThumbnailRefresher - Shutting down");
 	}
 }

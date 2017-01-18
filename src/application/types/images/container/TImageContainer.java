@@ -2,7 +2,6 @@ package application.types.images.container;
 
 import java.util.concurrent.ExecutionException;
 
-import application.types.TCacheManager;
 import application.types.TImage;
 import application.types.TImage.Maps;
 import application.types.TImageLoader;
@@ -12,12 +11,11 @@ import javafx.scene.image.ImageView;
 
 public class TImageContainer implements Runnable
 {
-
-	//private static final long serialVersionUID = 7636870256042424249L;
 	private TImage __image_data;
 	private ImageView __container;
 	
 	private boolean __show, __visible;
+	
 	private Image __image;
 	private String __size;
 	
@@ -25,7 +23,6 @@ public class TImageContainer implements Runnable
 	{
 		this.__image_data = image;
 		this.__container = container;
-		//this.__UUID = Executors.newSingleThreadExecutor().submit(new TIDCreator<>(this)).get();
 	}
 
 	public void show(boolean value)
@@ -60,7 +57,7 @@ public class TImageContainer implements Runnable
 		if (__image_data == null)
 			return;
 
-		//System.out.println("Data: " + this.__image_data.getMap(Maps.MAP_IMAGES).toString());
+		System.out.println("Data: " + this.__image_data.getMap(Maps.MAP_IMAGES).toString());
 		
 		try {
 
@@ -71,6 +68,8 @@ public class TImageContainer implements Runnable
 				//probably add a timer here to make sure that it wont be an infinite loop
 				while (__image == null)
 					Thread.sleep(1);
+				
+				System.out.println("Image loaded");
 			}
 
 			Platform.runLater(new Runnable() 

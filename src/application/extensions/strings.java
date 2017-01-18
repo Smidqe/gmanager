@@ -12,7 +12,7 @@ public class strings {
 		for (int i = 0; i < values.size(); i++)
 			matches += string.contains(values.get(i)) ? 1 : 0;
 		
-		return count != 0 ? matches >= count : matches > 0;
+		return (count != 0) ? matches >= count : matches > 0;
 	}
 	
 	public static boolean contains(List<String> values, String string, boolean all)
