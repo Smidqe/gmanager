@@ -53,7 +53,7 @@ public class TImageLoader implements Callable<List<Image>>
 		return img;
 	}
 	
-	private Image loadFromCache(String ID, String type) throws ClassNotFoundException, IOException, InterruptedException, ExecutionException
+	private synchronized Image loadFromCache(String ID, String type) throws ClassNotFoundException, IOException, InterruptedException, ExecutionException
 	{
 		if (!__manager.exists(ID))
 			return null;
@@ -102,10 +102,7 @@ public class TImageLoader implements Callable<List<Image>>
 			__ID = image.getProperty(Maps.MAP_PROPERTIES, "id");
 			
 			if (__manager.exists(__ID))
-			{
-				System.out.println("Image already exists on cache");
 				img = loadFromCache(__ID, image.getProperty(Maps.MAP_PROPERTIES, "original_format"));
-			}
 			else
 			{
 				img = load(image.getProperty(Maps.MAP_IMAGES, version));

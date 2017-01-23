@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -43,13 +44,21 @@ public class TCacheManager implements Runnable
 		this.ids = new WeakHashMap<String, String>();
 		this.__stop = false;
 		
-		this.__output = new WeakHashMap<String, Future<TResult<Image>>>();
+		this.__output = new ConcurrentHashMap<String, Future<TResult<Image>>>();
 		this.__executor = Executors.newCachedThreadPool();
 		this.__data = new LinkedBlockingDeque<TCacheJob>();
 	}
 	
 	public void save(Image img, String ID, String type) throws InterruptedException
 	{
+		if (img == null)
+			System.out.println("img is null");
+		
+		//check if we already have the file in our system
+		for (String id : ids.keySet())
+			if (id.equals(ID))
+				return;
+		
 		save(Arrays.asList(img), Arrays.asList(ID), Arrays.asList(type));
 	}
 	
@@ -65,6 +74,9 @@ public class TCacheManager implements Runnable
 	
 	public TCacheJob createJob(TCacheJob.Method method, String ID, Image img, String type)
 	{
+		if (img == null)
+			System.out.println("img is null");
+		
 		TCacheJob job = new TCacheJob();
 		
 		job.setID(ID);
@@ -128,7 +140,7 @@ public class TCacheManager implements Runnable
 		boolean __load;
 		Future<TResult<Image>> __future = null;
 		
-		TImageIOHandler.Method __method;
+		TImageIOHandler.Method __method = null;
 		
 		while (!this.__stop)
 		{
@@ -137,6 +149,9 @@ public class TCacheManager implements Runnable
 				
 				if (this.__stop || job.getID().equals(""))
 					break;
+				
+				if (job.getImage() == null)
+					System.out.println("job.getImage: image == null");
 				
 				__load = job.getMethod() == TCacheJob.Method.LOAD;
 				__method = __load ? TImageIOHandler.Method.LOAD : TImageIOHandler.Method.SAVE;
@@ -148,12 +163,23 @@ public class TCacheManager implements Runnable
 				this.ids.put(job.getID(), job.getType());
 				
 				System.out.println("Notifying the lock");
+
+				//wait for the image to write
+				synchronized (__handler.lock)
+				{
+					__handler.lock.wait();
+				}
 				synchronized (lock) {
 					lock.notify();
 				}
 				
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
+				
+				if (__method == TImageIOHandler.Method.LOAD)
+					System.out.println("We are loading");
+				else
+					System.out.println("We are saving");
+				
 				e.printStackTrace();
 			}
 		}

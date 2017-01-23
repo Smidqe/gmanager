@@ -70,7 +70,7 @@ public class TTileManager implements Runnable
 		return this.images;
 	}
 
-	public synchronized TImageContainer getContainerByNode(Node node)
+	public TImageContainer getContainerByNode(Node node)
 	{
 		if (node == null)
 			return null;
@@ -96,16 +96,6 @@ public class TTileManager implements Runnable
 		
 		containers.forEach(c -> imgs.add(c.getImageView().getImage()));
 		return imgs;
-	}
-	
-	public synchronized int getNullImageCount()
-	{
-		int count = 0;
-		
-		for (Image img : getThumbnails())
-			count += (img == null) ? 1 : 0;
-		
-		return count;
 	}
 	
 	public synchronized BlockingDeque<TGallery.Action> getDeque() 
@@ -139,15 +129,17 @@ public class TTileManager implements Runnable
 			try {
 				this.__status = Status.IDLE;
 				
-				System.out.println("Here");
+				//System.out.println("Here");
 				
 				__container = __images.take();
 				//set necessary variables
 				
+				this.__status = Status.RUNNING;
+				
 				if (this.__stop)
 					break;
 				
-				System.out.println("Something");
+				//System.out.println("Something");
 				
 				__container.setSize("thumb_small");
 				__container.show(true);
@@ -155,62 +147,67 @@ public class TTileManager implements Runnable
 				__executor.submit(__container);
 				__view = __container.getImageView();
 				
-				System.out.println("We are here");
+				//System.out.println("We are here");
 				if (__view == null)
 					System.out.println("__view == null");
 				
-				while (__view.getImage() == null)
+				while (__view.getImage() == null || __view.getImage().getProgress() != 1)
 					Thread.sleep(1);
-				
-				//save to cache
-				__cache.save(__view.getImage(), __container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "id"), __container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "original_format"));
 
-				System.out.println("Done saving hooefully");
+//				if (__container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "original_format").equals("gif"))
+//				{
+					System.out.println("__view.getImage(): " + __view.getImage());
+					
+					__cache.save(__view.getImage(), __container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "id"), __container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "original_format"));
+	
+					//System.out.println("Done saving hooefully");
+					
+					//wait for the caching thing to finish
+					__result = null;
+					found = false;
 				
-				//wait for the caching thing to finish
-				__result = null;
-				found = false;
-			
-				synchronized (__cache.lock) {
-					__cache.lock.wait();
-				}
-				
-				old = __gallery.getChildren().size();
-				while (!found)
-				{
-					for (String ID : __cache.getCurrentJobs().keySet())
-						if (ID.equals(__container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "id")))
+					synchronized (__cache.lock) {
+						__cache.lock.wait();
+					}
+					
+					old = __gallery.getChildren().size();
+					while (!found)
+					{
+						for (String ID : __cache.getCurrentJobs().keySet())
+							if (ID.equals(__container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "id")))
+							{
+								
+								__result = __cache.getCurrentJobs().get(ID);
+								__cache.getCurrentJobs().remove(ID);
+								break;
+							}
+						
+						if (__result != null)
 						{
+							System.out.println("Something");
+							__result.get(); //just finish it
 							
-							__result = __cache.getCurrentJobs().get(ID);
-							__cache.getCurrentJobs().remove(ID);
+							this.images.add(__container);
+							
+							Platform.runLater(new Runnable() 
+							{
+								@Override
+								public void run() 
+								{
+									__gallery.getChildren().add(images.get(images.size() - 1).getImageView());
+								}
+							});
+							
+							while (__gallery.getChildren().size() == old)
+								Thread.sleep(1);
+							
 							break;
 						}
-					
-					if (__result != null)
-					{
-						System.out.println("Something");
-						__result.get(); //just finish it
-						
-						this.images.add(__container);
-						
-						Platform.runLater(new Runnable() 
-						{
-							@Override
-							public void run() 
-							{
-								__gallery.getChildren().add(images.get(images.size() - 1).getImageView());
-							}
-						});
-						
-						while (__gallery.getChildren().size() == old)
-							Thread.sleep(1);
-						
-						break;
 					}
-				}
+	
+					__refresher_deque.put(Action.REFRESHER);
+				//}
 
-				__refresher_deque.put(Action.REFRESHER);
 			} catch (InterruptedException | ExecutionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

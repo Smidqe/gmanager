@@ -57,7 +57,7 @@ public class TImageContainer implements Runnable
 		if (__image_data == null)
 			return;
 
-		System.out.println("Data: " + this.__image_data.getMap(Maps.MAP_IMAGES).toString());
+		//System.out.println("Data: " + this.__image_data.getMap(Maps.MAP_IMAGES).toString());
 		
 		try {
 
@@ -69,7 +69,7 @@ public class TImageContainer implements Runnable
 				while (__image == null)
 					Thread.sleep(1);
 				
-				System.out.println("Image loaded");
+				//System.out.println("Image loaded");
 			}
 
 			Platform.runLater(new Runnable() 

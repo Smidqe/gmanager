@@ -72,8 +72,8 @@ public class TThumbnailRefresher implements Runnable
 	
 	public void scan()
 	{
-		List<Node> nodes = __gallery.getTilePane().getChildren();
-		
+		List<Node> nodes = __gallery.getTilePane().getChildrenUnmodifiable();
+
 		//if we haven't loaded the first batch.
 		//TODO: Switch this to a site linked constant or perhaps something that the user can modify
 		if (nodes.size() < 15)
