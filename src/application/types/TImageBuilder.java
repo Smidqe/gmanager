@@ -36,15 +36,6 @@ public class TImageBuilder implements Callable<TImage>{
 				if (strings.contains(skippable, key, false)) 
 					continue;
 			
-			/*
-				There are few cases what information.get() can be
-					- List
-					- Map
-					- Value
-			
-				
-			 */
-			
 			if (information.get(key) instanceof List)
 				object.setProperty(Maps.MAP_PROPERTIES, key, ((List<String>) information.get(key)).toString());
 			else if (information.get(key) instanceof Map)

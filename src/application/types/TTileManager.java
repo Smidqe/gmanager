@@ -154,8 +154,8 @@ public class TTileManager implements Runnable
 				while (__view.getImage() == null || __view.getImage().getProgress() != 1)
 					Thread.sleep(1);
 
-//				if (__container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "original_format").equals("gif"))
-//				{
+				if (!__container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "original_format").equals("gif"))
+				{
 					System.out.println("__view.getImage(): " + __view.getImage());
 					
 					__cache.save(__view.getImage(), __container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "id"), __container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "original_format"));
@@ -206,7 +206,7 @@ public class TTileManager implements Runnable
 					}
 	
 					__refresher_deque.put(Action.REFRESHER);
-				//}
+				}
 
 			} catch (InterruptedException | ExecutionException e) {
 				// TODO Auto-generated catch block

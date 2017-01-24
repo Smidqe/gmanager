@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -15,6 +16,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import application.extensions.arrays;
+import application.types.factories.FThreadFactory;
 import application.types.images.saver.TImageIOHandler;
 import javafx.scene.image.Image;
 
@@ -31,6 +33,7 @@ public class TCacheManager implements Runnable
 	private TSettings __settings = TSettings.instance();
 	
 	private boolean __stop;
+	//private 
 	private BlockingDeque<TCacheJob> __data;
 	
 	private Map<String, String> ids;
@@ -45,8 +48,9 @@ public class TCacheManager implements Runnable
 		this.__stop = false;
 		
 		this.__output = new ConcurrentHashMap<String, Future<TResult<Image>>>();
-		this.__executor = Executors.newCachedThreadPool();
+		this.__executor = Executors.newCachedThreadPool(new FThreadFactory("TCacheManager", "Subthreads", true));
 		this.__data = new LinkedBlockingDeque<TCacheJob>();
+
 	}
 	
 	public void save(Image img, String ID, String type) throws InterruptedException
@@ -88,14 +92,73 @@ public class TCacheManager implements Runnable
 	
 	public void load(String ID, String type) throws InterruptedException
 	{
+		//check if we already have a job for this ID
 		load(Arrays.asList(ID), Arrays.asList(type));
+		
+		
+	}
+	
+	public TCacheJob getJob(String ID)
+	{
+		if (__data.size() == 0)
+			return null;
+			
+		Iterator<TCacheJob> iterator = __data.iterator();
+		TCacheJob job = null;
+		while (iterator.hasNext())
+		{
+			job = iterator.next();
+			
+			if (job.getID().equals(ID))
+				return job;
+		}
+		
+		return null;
+	}
+	
+	public void stop(String ID)
+	{
+		Iterator<String> __iterator = __output.keySet().iterator();
+		
+		while (__iterator.hasNext())
+		{
+			String __key = __iterator.next();
+			
+			if (!__key.equals(ID))
+				continue;
+			
+			Future<TResult<Image>> __job = __output.get(__key);
+			__job.cancel(true);
+		}
+	}
+	
+	public boolean jobExists(String ID)
+	{
+		if (__data.size() == 0)
+			return false;
+			
+		Iterator<TCacheJob> iterator = __data.iterator();
+		TCacheJob job = null;
+		while (iterator.hasNext())
+		{
+			job = iterator.next();
+			
+			if (job.getID().equals(ID))
+				return true;
+		}
+		
+		return false;
 	}
 	
 	public void load(List<String> IDs, List<String> types) throws InterruptedException
 	{
 		for (int i = 0; i < IDs.size(); i++)
+		{
+			if (jobExists(IDs.get(i)))
+				continue;
+			
 			this.__data.put(createJob(TCacheJob.Method.LOAD, IDs.get(i), null, types.get(i)));
-		
+		}
 		System.out.println("TCacheManager.load(): Added jobs");
 	}
 	
@@ -155,6 +218,7 @@ public class TCacheManager implements Runnable
 				
 				__load = job.getMethod() == TCacheJob.Method.LOAD;
 				__method = __load ? TImageIOHandler.Method.LOAD : TImageIOHandler.Method.SAVE;
+				//change
 				__handler = new TImageIOHandler(__method, __settings.getPath("cache") + job.getID(), job.getType(), job.getImage(), job.getType());
 
 				//Add it to current jobs
@@ -162,8 +226,6 @@ public class TCacheManager implements Runnable
 				this.__output.put(job.getID(), __future);
 				this.ids.put(job.getID(), job.getType());
 				
-				System.out.println("Notifying the lock");
-
 				//wait for the image to write
 				synchronized (__handler.lock)
 				{

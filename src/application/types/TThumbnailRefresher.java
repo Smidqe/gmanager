@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import application.extensions.arrays;
 import application.types.custom.TGallery;
 import application.types.custom.TGallery.Action;
+import application.types.factories.FThreadFactory;
 import application.types.images.container.TImageContainer;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
@@ -44,7 +45,7 @@ public class TThumbnailRefresher implements Runnable
 		
 		this.__gallery = manager;
 		this.__deque = __action_deque;
-		this.__executor = Executors.newCachedThreadPool();
+		this.__executor = Executors.newCachedThreadPool(new FThreadFactory("TThumbnailRefresher", "Subthreads", true));
 	}
 
 	public synchronized boolean inViewport(Node node)
@@ -109,6 +110,7 @@ public class TThumbnailRefresher implements Runnable
 		
 		if (nodes.size() == 0)
 			return;
+		
 		TImageContainer __container = null;
  		for (Node node : nodes)
  		{

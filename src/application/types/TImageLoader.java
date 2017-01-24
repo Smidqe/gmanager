@@ -65,10 +65,12 @@ public class TImageLoader implements Callable<List<Image>>
 		if (__loaded == null)
 			return null;
 		
+		
+		int cycles = 0;
 		Future<TResult<Image>> __result = null;
 		boolean found = false;
 		Image img = null;
-		while (!found)
+		while (!found && cycles < 10)
 		{
 			
 			for (String __id : __loaded.keySet())
@@ -82,11 +84,15 @@ public class TImageLoader implements Callable<List<Image>>
 			
 			if (__result != null)
 			{
-				System.out.println("Something");
 				img = __result.get().get();
 				found = true;
 			}
+			
+			cycles++;
 		}
+		
+		if (!(cycles < 10))
+			System.out.println("TImageLoader - Image was not found in 10 cycles.");
 		
 		return img;
 	}
