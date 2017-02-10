@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+
 public class TSite 
 {
 	private String name;
@@ -16,20 +17,20 @@ public class TSite
 	private Map<String, URL> urls;
 	private boolean authenticate;
 	
+	
+	//possible future variables
+	/*
+	private boolean https;
+	private boolean 
+	*/
+	
 	public TSite()
 	{
 		this.IDs = new WeakHashMap<String, String>();
 		this.skippables = new ArrayList<String>();
 		this.urls = new WeakHashMap<String, URL>();
-		
-		loadSettings();
 	}
-	
-	private void loadSettings()
-	{
-		
-	}
-	
+
 	public void setURL(String name, URL url) throws MalformedURLException
 	{
 		this.urls.put(name, url);
@@ -40,12 +41,12 @@ public class TSite
 		this.skippables.add(ID);
 	}
 	
-	public synchronized void setID(String key, String value)
+	public void setID(String key, String value)
 	{
 		this.IDs.put(key, value);
 	}
 	
-	public synchronized Map<String, String> getIDs()
+	public Map<String, String> getIDs()
 	{
 		return this.IDs;
 	}
@@ -60,12 +61,12 @@ public class TSite
 		return this.name;
 	}
 	
-	public synchronized URL getURL(String name)
+	public URL getURL(String name)
 	{
 		return getURL(name, "", 0);
 	}
 	
-	public synchronized URL getURL(String name, String prefix, int page)
+	public URL getURL(String name, String prefix, int page)
 	{
 		if (page == 0)
 			return this.urls.get(name);

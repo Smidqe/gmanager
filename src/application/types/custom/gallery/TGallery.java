@@ -1,4 +1,4 @@
-package application.types.custom;
+package application.types.custom.gallery;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -16,9 +16,8 @@ import application.types.TCacheManager;
 import application.types.TGrabber;
 import application.types.TGrabber.Status;
 import application.types.factories.FThreadFactory;
-import application.types.images.container.TImageContainer;
 import application.types.sites.TSite;
-import application.types.TThumbnailRefresher;
+//import application.types.TThumbnailRefresher;
 import application.types.TTileManager;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -40,8 +39,9 @@ public class TGallery
 	private TilePane __tiles;
 	private ScrollPane __container;
 	private TTileManager __manager;
+	private TViewport __viewport;
 	private TGrabber __grabber;
-	private TThumbnailRefresher __refresher;
+	//private TThumbnailRefresher __refresher;
 	private TCacheManager __cache;
 	private TSite __site;
 	private int __current_page = 1;
@@ -52,23 +52,23 @@ public class TGallery
 	//meant for the background threads
 	private List<Future<?>> __futures;
 	
-	private boolean __allow_refresh;
-	
 	public TGallery(TilePane tiles, ScrollPane container) throws MalformedURLException, InterruptedException 
 	{
-		this.__allow_refresh = true;
-		
 		//create the deques
 		this.__action_deque = new LinkedBlockingDeque<Action>();
 		this.__futures = new ArrayList<Future<?>>();
+		
+		
 		
 		//initialize some other necessary variables
 		this.__cache = TCacheManager.instance();
 		this.__tiles = tiles;
 		this.__container = container;
-		this.__manager = new TTileManager(this.__tiles, this.__action_deque, this.__cache);
-		this.__grabber = new TGrabber(this.__manager, this.__action_deque); 
-		this.__refresher = new TThumbnailRefresher(this, this.__action_deque);		
+		
+		this.__viewport = new TViewport(this.__tiles, this.__container);
+		this.__manager = new TTileManager(this.__viewport, this.__tiles);
+		this.__grabber = new TGrabber(this.__manager, this.__action_deque, this.__viewport); 
+		//this.__refresher = new TThumbnailRefresher(this, this.__action_deque);		
 		
 
 		//create a threadpool for the subthreads
@@ -85,7 +85,7 @@ public class TGallery
 		__container.heightProperty().addListener(createResizeListener());
 		
 		//Add the refresher.
-		__futures.add(this.__threads.submit(this.__refresher));
+		//__futures.add(this.__threads.submit(this.__refresher));
 		__futures.add(this.__threads.submit(this.__grabber));
 		__futures.add(this.__threads.submit(this.__cache));
 		__futures.add(this.__threads.submit(this.__manager));
@@ -111,14 +111,14 @@ public class TGallery
 					@Override
 					public synchronized void run() 
 					{
-						try 
-						{
-							if ((__refresher.getStatus() == TThumbnailRefresher.Status.IDLE) && __allow_refresh)
-								__action_deque.put(Action.REFRESHER);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+//						try 
+//						{
+//							if ((__refresher.getStatus() == TThumbnailRefresher.Status.IDLE) && __allow_refresh)
+//								__action_deque.put(Action.REFRESHER);
+//						} catch (InterruptedException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
 					}
 				};
 				
@@ -135,13 +135,14 @@ public class TGallery
 			public synchronized void changed(ObservableValue<? extends Number> arg0, Number arg1, Number valueNew) 
 			{
 				try {					
-					__allow_refresh = (__manager.getStatus() != TTileManager.Status.RUNNING);
-						
-					
-					//make sure that we don't overwhelm the refresher
-					if ((__refresher.getStatus() == TThumbnailRefresher.Status.IDLE) && __allow_refresh)
-						__action_deque.put(Action.REFRESHER);
+//					//prevent from refreshing when TTilemanager is doing something
+//					__allow_refresh = (__manager.getStatus() != TTileManager.Status.RUNNING);
+//
+//					//make sure that we don't overwhelm the refresher
+//					if ((__refresher.getStatus() == TThumbnailRefresher.Status.IDLE) && __allow_refresh)
+//						__action_deque.put(Action.REFRESHER);
 
+					
 					if ((valueNew.doubleValue() == 1.0) && (__grabber.getStatus() == Status.IDLE))
 					{
 						__grabber.setURL(__site.getURL("images", "?page=", ++__current_page), false);
@@ -156,7 +157,7 @@ public class TGallery
 		};
 	}
 	
-	public synchronized BoundingBox getViewportLocation()
+	public BoundingBox getViewportLocation()
 	{
 		double __value = (__tiles.getHeight() - __container.getViewportBounds().getHeight()) * __container.getVvalue();
 		
@@ -183,32 +184,26 @@ public class TGallery
 	{
 		switch (id)
 		{
-			case PAGES: break;
-			case IMAGES: return this.__manager.getImages().size();
+			case PAGES: break; //return this.__manager.getPages()
+			case IMAGES: return this.__manager.amount();
 
 		}
 		
 		return -1;
 	}
 
-	public TThumbnailRefresher getRefresher()
-	{
-		return this.__refresher;
-	}
-	
-	public void allowRefreshing(boolean value)
-	{
-		this.__allow_refresh = value;
-	}
-	
+//	public TThumbnailRefresher getRefresher()
+//	{
+//		return this.__refresher;
+//	}
+
 	public void stop() throws Exception 
 	{
 		__grabber.stop();
-		__refresher.stop();
+		//__refresher.stop();
 		__cache.stop();
 		__manager.stop();
 		__action_deque.put(Action.SHUTDOWN);
-		__manager.add(new TImageContainer(null, null));
 
 		for (Future<?> future: __futures)
 			future.get();

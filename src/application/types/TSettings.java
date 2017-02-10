@@ -9,6 +9,7 @@ import libFileExtensions.files.TIniFile;
 
 public class TSettings 
 {
+
 	private Map<String, String> __settings;
 	private Map<String, String> __paths;
 	private Map<String, TSite> __sites;
@@ -86,5 +87,10 @@ public class TSettings
 	{
 		return this.__sites.get(key);
 	}
+	
+	
 	//add rest of the functions later.
+	/*
+	 	load
+	 */
 }

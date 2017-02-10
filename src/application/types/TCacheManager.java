@@ -2,7 +2,6 @@ package application.types;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -15,15 +14,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import application.extensions.arrays;
 import application.types.factories.FThreadFactory;
 import application.types.images.saver.TImageIOHandler;
 import javafx.scene.image.Image;
 
 /*
 	TODO:
-		- Clean this POS.
-		- Probably 
+		- Rewrite this POS
+
  */
 
 public class TCacheManager implements Runnable
@@ -38,6 +36,7 @@ public class TCacheManager implements Runnable
 	
 	private Map<String, String> ids;
 	private Map<String, Future<TResult<Image>>> __output;
+	
 	//the executor for IO handlers.
 	private ExecutorService __executor;
 	
@@ -56,7 +55,7 @@ public class TCacheManager implements Runnable
 	public void save(Image img, String ID, String type) throws InterruptedException
 	{
 		if (img == null)
-			System.out.println("img is null");
+			System.out.println("TCacheManager: save(): img is null");
 		
 		//check if we already have the file in our system
 		for (String id : ids.keySet())
@@ -79,7 +78,7 @@ public class TCacheManager implements Runnable
 	public TCacheJob createJob(TCacheJob.Method method, String ID, Image img, String type)
 	{
 		if (img == null)
-			System.out.println("img is null");
+			System.out.println("TCacheManager: createJob(): img is null");
 		
 		TCacheJob job = new TCacheJob();
 		
@@ -132,7 +131,7 @@ public class TCacheManager implements Runnable
 		}
 	}
 	
-	public boolean jobExists(String ID)
+	public boolean inQueue(String ID)
 	{
 		if (__data.size() == 0)
 			return false;
@@ -154,15 +153,16 @@ public class TCacheManager implements Runnable
 	{
 		for (int i = 0; i < IDs.size(); i++)
 		{
-			if (jobExists(IDs.get(i)))
+			if (inQueue(IDs.get(i)))
 				continue;
 			
 			this.__data.put(createJob(TCacheJob.Method.LOAD, IDs.get(i), null, types.get(i)));
 		}
+		
 		System.out.println("TCacheManager.load(): Added jobs");
 	}
 	
-	public synchronized Map<String, Future<TResult<Image>>> getCurrentJobs()
+	public synchronized Map<String, Future<TResult<Image>>> getStartedJobs()
 	{
 		return this.__output;
 	}
@@ -213,8 +213,13 @@ public class TCacheManager implements Runnable
 				if (this.__stop || job.getID().equals(""))
 					break;
 				
-				if (job.getImage() == null)
-					System.out.println("job.getImage: image == null");
+				//save unloaded image (load and save it)
+				/*
+				if (job.getImage() == null && job.getMethod() == TCacheJob.Method.SAVE)
+				{
+					
+				}
+				*/
 				
 				__load = job.getMethod() == TCacheJob.Method.LOAD;
 				__method = __load ? TImageIOHandler.Method.LOAD : TImageIOHandler.Method.SAVE;
@@ -238,9 +243,9 @@ public class TCacheManager implements Runnable
 			} catch (InterruptedException e) {
 				
 				if (__method == TImageIOHandler.Method.LOAD)
-					System.out.println("We are loading");
+					System.out.println("Error while loading");
 				else
-					System.out.println("We are saving");
+					System.out.println("Error while saving");
 				
 				e.printStackTrace();
 			}

@@ -3,20 +3,14 @@ package application.types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import application.types.TImage.Maps;
-import application.types.custom.TGallery;
-import application.types.custom.TGallery.Action;
-import application.types.images.container.TImageContainer;
+import application.types.custom.gallery.TViewport;
+import application.types.custom.gallery.tiles.TTile;
+import application.types.custom.gallery.tiles.TTile.Action;
 import javafx.application.Platform;
-import javafx.scene.Node;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.TilePane;
 
 public class TTileManager implements Runnable
@@ -24,199 +18,109 @@ public class TTileManager implements Runnable
 	public enum Status {IDLE, RUNNING, ERROR};
 	
 	private boolean __stop = false;
-	private List<TImageContainer> images = new ArrayList<TImageContainer>();
-	private TilePane __gallery;
-	private ExecutorService __executor;
-	private TCacheManager __cache;
-
-	private BlockingDeque<TImageContainer> __images;
-	//used for allowing refreshing to happen, instead of notify
-	private BlockingDeque<TGallery.Action> __refresher_deque;
-	private Status __status;
 	
-	public TTileManager(TilePane node, BlockingDeque<Action> __action_deque, TCacheManager cache)
+	private List<TTile> __images = new ArrayList<TTile>();
+	private BlockingDeque<TTile> __queue = new LinkedBlockingDeque<TTile>();
+	private ExecutorService __subthreads;
+	
+	private TilePane __tiles;
+	
+	private TTile __tile;
+	
+	public TTileManager(TViewport viewport, TilePane tiles)
 	{
-		this.__gallery = node;
-		this.__refresher_deque = __action_deque;
-		this.__images = new LinkedBlockingDeque<TImageContainer>();
-		this.__executor = Executors.newSingleThreadExecutor();
-		this.__cache = cache;
+		this.__tiles = tiles;
+		this.__subthreads = Executors.newCachedThreadPool();	
 	}
 	
-	public synchronized void add(TImageContainer image) throws Exception
+	public void add(TTile image) throws InterruptedException
 	{
 		if (image == null)
+			throw new NullPointerException("Parameter: image is null");
+		
+		this.__queue.put(image);
+	}
+	
+	public void add(List<TTile> images) throws InterruptedException
+	{
+		if (images == null)
+			throw new NullPointerException("add(List<>): Parameter images is null");
+		
+		for (TTile tile : images)
+			add(tile);
+	}
+	
+	public void remove(TTile image)
+	{
+		if (image == null)
+			throw new NullPointerException("Parameter: image is null");
+		
+		int pos = __images.indexOf(image);
+		
+		if (pos == -1)
 			return;
-
-		this.__images.put(image);
-	}
-
-	public synchronized void add(List<TImageContainer> list) throws Exception
-	{
-		if (list == null)
-			throw new NullPointerException();
-
-		for (TImageContainer container : list)
-			add(container);
-	}
-
-	public TilePane getTilePane()
-	{
-		return this.__gallery;
+		
+		TTile __temp = __images.get(pos);
+		__temp.stop();
+		__images.remove(pos);
 	}
 	
-	public List<TImageContainer> getImages()
-	{
-		return this.images;
-	}
-
-	public TImageContainer getContainerByNode(Node node)
-	{
-		if (node == null)
-			return null;
-		
-		TImageContainer container = null;
-		
-		List<Node> nodes = getTilePane().getChildren();
-		for (int i = 0; i < nodes.size(); i++)
-		{
-			container = (node.equals(nodes.get(i))) ? images.get(i) : null;
-		
-			if (container != null)
-				break;
-		}	
-		
-		return container;
-	}
-
-	public synchronized List<Image> getThumbnails()
-	{
-		List<TImageContainer> containers = getImages();
-		List<Image> imgs = new ArrayList<Image>();
-		
-		containers.forEach(c -> imgs.add(c.getImageView().getImage()));
-		return imgs;
-	}
-	
-	public synchronized BlockingDeque<TGallery.Action> getDeque() 
-	{
-		return this.__refresher_deque;
-	}
-
-	
-	public Status getStatus()
-	{
-		return this.__status;
-	}
-	
-	public void stop()
+	public void stop() throws InterruptedException
 	{
 		this.__stop = true;
+		this.__queue.put(new TTile(null));
+	}
+	
+	public int amount()
+	{
+		return this.__images.size();
 	}
 	
 	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		
-		TImageContainer __container = null;
-		ImageView __view = null;
-		Future<TResult<Image>> __result = null;
-		boolean found;
+	public void run() 
+	{
 		int old;
 		
 		while (!this.__stop)
 		{
+			System.out.println("Amount of images managed: " + amount());
+			
 			try {
-				this.__status = Status.IDLE;
+				__tile = __queue.take();
 				
-				//System.out.println("Here");
-				
-				__container = __images.take();
-				//set necessary variables
-				
-				this.__status = Status.RUNNING;
-				
-				if (this.__stop)
-					break;
-				
-				//System.out.println("Something");
-				
-				__container.setSize("thumb_small");
-				__container.show(true);
-
-				__executor.submit(__container);
-				__view = __container.getImageView();
-				
-				//System.out.println("We are here");
-				if (__view == null)
-					System.out.println("__view == null");
-				
-				while (__view.getImage() == null || __view.getImage().getProgress() != 1)
-					Thread.sleep(1);
-
-				if (!__container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "original_format").equals("gif"))
+				if (__tile.getData() == null)
 				{
-					System.out.println("__view.getImage(): " + __view.getImage());
-					
-					__cache.save(__view.getImage(), __container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "id"), __container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "original_format"));
-	
-					//System.out.println("Done saving hooefully");
-					
-					//wait for the caching thing to finish
-					__result = null;
-					found = false;
-				
-					synchronized (__cache.lock) {
-						__cache.lock.wait();
-					}
-					
-					old = __gallery.getChildren().size();
-					while (!found)
-					{
-						for (String ID : __cache.getCurrentJobs().keySet())
-							if (ID.equals(__container.getImageContainer().getProperty(Maps.MAP_PROPERTIES, "id")))
-							{
-								
-								__result = __cache.getCurrentJobs().get(ID);
-								__cache.getCurrentJobs().remove(ID);
-								break;
-							}
-						
-						if (__result != null)
-						{
-							System.out.println("Something");
-							__result.get(); //just finish it
-							
-							this.images.add(__container);
-							
-							Platform.runLater(new Runnable() 
-							{
-								@Override
-								public void run() 
-								{
-									__gallery.getChildren().add(images.get(images.size() - 1).getImageView());
-								}
-							});
-							
-							while (__gallery.getChildren().size() == old)
-								Thread.sleep(1);
-							
-							break;
-						}
-					}
-	
-					__refresher_deque.put(Action.REFRESHER);
+					System.out.println("__tile.getData() is null"); 
+					continue;
 				}
+				//System.out.println("__tile.id: " + __tile.getData().getProperty(Maps.DATA, "id"));
+				__subthreads.submit(__tile);
+				__images.add(__tile);
+				
+				//add it to our subthreads and to a list
+				
+				old = __tiles.getChildren().size();
+				Platform.runLater(new Runnable(){
 
-			} catch (InterruptedException | ExecutionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						__tile.setAction(Action.SHOW);
+						__tiles.getChildren().add(__tile.getNode());
+						
+					}});
+
+				//wait until fx thread has put the imageview to tilepane
+				while (__tiles.getChildren().size() == old)
+					Thread.sleep(1);
+				
+			} catch (InterruptedException e) {
+				
+				System.out.println(e.getMessage());
+				System.out.println(__tile.toString());
 			}
 			
-			
 		}
-		
-		System.out.println("TTileManager: Shutting down");
 	}
 
 }

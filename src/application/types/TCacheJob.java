@@ -7,9 +7,11 @@ public class TCacheJob
 	public enum Method {LOAD, SAVE, STOP};
 	private String ID, type;
 	private Image img;
+	private TImage __data;
 	private Method method;
 	
-	public TCacheJob() {
+	public TCacheJob() 
+	{
 	}
 	
 	public TCacheJob(String ID, Image img, String type) 
@@ -51,5 +53,13 @@ public class TCacheJob
 	public String getType()
 	{
 		return this.type;
+	}
+
+	public TImage getData() {
+		return __data;
+	}
+
+	public void setData(TImage __data) {
+		this.__data = __data;
 	}
 }

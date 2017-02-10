@@ -37,13 +37,13 @@ public class TImageBuilder implements Callable<TImage>{
 					continue;
 			
 			if (information.get(key) instanceof List)
-				object.setProperty(Maps.MAP_PROPERTIES, key, ((List<String>) information.get(key)).toString());
+				object.setProperty(Maps.DATA, key, ((List<String>) information.get(key)).toString());
 			else if (information.get(key) instanceof Map)
 			{
 				Map<String, String> map = (Map<String, String>) information.get(key);
 				
 				for (String subkey : map.keySet())
-					object.setProperty(Maps.MAP_PROPERTIES, subkey, map.get(subkey));
+					object.setProperty(Maps.DATA, subkey, map.get(subkey));
 			}
 			else
 			{	
@@ -53,24 +53,25 @@ public class TImageBuilder implements Callable<TImage>{
 				else
 					value = information.get(key).toString();
 					
-				object.setProperty(Maps.MAP_PROPERTIES, key, value);
+				object.setProperty(Maps.DATA, key, value);
 			}
 		}
 		
-		keys = object.getProperties(Maps.MAP_PROPERTIES).keySet();
+		keys = object.getProperties(Maps.DATA).keySet();
 		
-		//fix the urls, for example derpibooru doesn't have http/https in thumbnail/image links
+		//fix urls that don't have http/https protocol added to their urls
 		for (String key : keys)
 		{
-			String value = object.getProperty(Maps.MAP_PROPERTIES, key);
+			String value = object.getProperty(Maps.DATA, key);
 			
 			if (!strings.contains(Arrays.asList("https", "http", "//"), value, false))
 				continue;
 			
+			//this might be affected, since not all sites provide https, but eventually I'll have a variable that will be loaded when settings are loaded.
 			if (value.contains("//") && !strings.contains(Arrays.asList("https", "http"), value, false));
 				value = "https:" + value;
 			
-			object.setProperty(Maps.MAP_IMAGES, key, value);
+			object.setProperty(Maps.LINKS, key, value);
 		}
 		
 		return object;

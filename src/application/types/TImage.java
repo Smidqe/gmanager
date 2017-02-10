@@ -6,23 +6,22 @@ import java.util.Map;
 
 public class TImage
 {
-	public enum Maps {MAP_PROPERTIES, MAP_IMAGES};;
+	public enum Maps {DATA, LINKS};
 	
-	private Map<String, String> properties;
-	private Map<String, String> images;
+	//image data
+	private Map<String, String> __data;
+	private Map<String, String> __links;
 
+	
 	public TImage()
 	{
-		this.properties = new HashMap<String, String>();
-		this.images = new HashMap<String, String>();
+		this.__data = new HashMap<String, String>();
+		this.__links = new HashMap<String, String>();
 	}
 	
 	public Map<String, String> getMap(Maps map)
 	{
-		if (map == Maps.MAP_PROPERTIES)
-			return properties;
-		else
-			return images;
+		return (map == Maps.DATA) ? this.__data : this.__links;
 	}
 	
 	public Map<String, String> getProperties(Maps map)
@@ -30,23 +29,22 @@ public class TImage
 		return getMap(map);
 	}
 	
-	public synchronized String getProperty(Maps map, String key)
+	public String getProperty(Maps map, String key)
 	{
-		return getMap(map).get(key);
+		return ((map == Maps.DATA) ? this.__data : this.__links).get(key);
 	}
 	
-	public synchronized void setProperty(Maps map, String key, String value)
+	public void setProperty(Maps map, String key, String value)
 	{
+		//no null values,
 		if (value == null)
 			value = "";
 		
-		if (map == Maps.MAP_PROPERTIES)
-			this.properties.put(key, value);
-		else
-			this.images.put(key, value);
+		//using ternary operator we can squeeze if else case to a single line, much cleaner :P
+		((map == Maps.DATA) ? this.__data : this.__links).put(key, value);
 	}
 	
-	public synchronized void setProperties(Maps map, List<String> keys, List<String> values)
+	public void setProperties(Maps map, List<String> keys, List<String> values)
 	{
 		if (!(keys.size() == values.size()))
 			throw new IndexOutOfBoundsException("Amount of keys doesn't match the amount of values, no null values this time!");
@@ -54,14 +52,9 @@ public class TImage
 		for (int i = 0; i < keys.size(); i++)
 			setProperty(map, keys.get(i), values.get(i));
 	}
-
-	public synchronized boolean compare(TImage image)
-	{
-		return (this.properties.get("sha512_hash").equals(image.properties.get("sha512_hash")));
-	}
 	
-	public synchronized Map<String, String> getImageURLs()
+	public boolean compare(TImage image)
 	{
-		return this.images;
+		return (this.__data.get("sha512_hash").equals(image.getProperty(Maps.DATA, "sha512_hash")));
 	}
 }

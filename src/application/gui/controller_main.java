@@ -40,7 +40,7 @@ import javafx.scene.layout.TilePane;
 import javafx.stage.Screen;
 import javafx.stage.Window;
 
-import application.types.custom.TGallery;
+import application.types.custom.gallery.TGallery;
 
 public class controller_main implements Initializable
 { 
@@ -376,14 +376,10 @@ public class controller_main implements Initializable
 			@Override
 			public void handle(MouseEvent event) 
 			{ 		
-				__gallery.allowRefreshing(false);
-				
 				if (ap_main.getScene().getCursor().equals(Cursor.DEFAULT))
 					relocate(event, ap_main.getScene().getWindow(), point); 
 				else
 					resize(event, ap_main.getScene());
-				
-				__gallery.allowRefreshing(true);
 			}
 			
 		});

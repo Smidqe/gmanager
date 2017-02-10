@@ -2,7 +2,6 @@ package application.types;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -10,7 +9,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import application.types.TImage.Maps;
-import javafx.application.Platform;
 import javafx.scene.image.Image;
 
 /*
@@ -60,7 +58,7 @@ public class TImageLoader implements Callable<List<Image>>
 			
 		__manager.load(ID, type);
 		
-		Map<String, Future<TResult<Image>>> __loaded = __manager.getCurrentJobs();
+		Map<String, Future<TResult<Image>>> __loaded = __manager.getStartedJobs();
 
 		if (__loaded == null)
 			return null;
@@ -105,44 +103,19 @@ public class TImageLoader implements Callable<List<Image>>
 		
 		for (TImage image : images)
 		{
-			__ID = image.getProperty(Maps.MAP_PROPERTIES, "id");
+			__ID = image.getProperty(Maps.DATA, "id");
 			
 			if (__manager.exists(__ID))
-				img = loadFromCache(__ID, image.getProperty(Maps.MAP_PROPERTIES, "original_format"));
+				img = loadFromCache(__ID, image.getProperty(Maps.DATA, "original_format"));
 			else
 			{
-				img = load(image.getProperty(Maps.MAP_IMAGES, version));
+				img = load(image.getProperty(Maps.LINKS, version));
 			}
 			
 			result.add(img);
 		}
 		
 		
-		return result;
-	}
-	
-	@SuppressWarnings("unused")
-	private List<Image> __images_load() throws Exception
-	{
-		if (images.size() == 0)
-			return null;
-		
-		if (images.size() == 1)
-			if (__manager.exists(images.get(0).getProperty(Maps.MAP_PROPERTIES, "id")))
-				return Arrays.asList(loadFromCache(images.get(0).getProperty(Maps.MAP_PROPERTIES, "id"), images.get(0).getProperty(Maps.MAP_PROPERTIES, "original_format")));
-			else
-				return Arrays.asList(load(images.get(0).getProperty(Maps.MAP_IMAGES, version)));
-
-		List<Image> result = new ArrayList<Image>();
-		
-		for (TImage image : images)
-		{
-			if (__manager.exists(image.getProperty(Maps.MAP_PROPERTIES, "id")))
-				result.add(loadFromCache(image.getProperty(Maps.MAP_PROPERTIES, "id"), image.getProperty(Maps.MAP_PROPERTIES, "original_format")));
-			else
-				result.add(load(image.getProperty(Maps.MAP_IMAGES, version)));
-		}
-
 		return result;
 	}
 

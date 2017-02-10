@@ -7,6 +7,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import javafx.scene.image.Image;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
@@ -72,5 +74,19 @@ public class connections {
 		__reader.close();
 		
 		return json;
+	}
+	
+	public static Image getImage(URL url) throws MalformedURLException
+	{
+		return getImage(url.toString());
+	}
+	
+	public static Image getImage(String url) throws MalformedURLException
+	{
+		URL __url;
+		if ((__url = verify(url)) == null)
+			return null;
+			
+		return new Image(__url.toString(), 150, 150, true, false, false);
 	}
 }

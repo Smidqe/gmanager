@@ -19,10 +19,11 @@ import java.util.concurrent.Future;
 import org.json.simple.JSONObject;
 
 import application.extensions.connections;
-import application.types.custom.TGallery;
-import application.types.custom.TGallery.Action;
+import application.types.custom.gallery.TGallery;
+import application.types.custom.gallery.TGallery.Action;
+import application.types.custom.gallery.TViewport;
+import application.types.custom.gallery.tiles.TTile;
 import application.types.factories.FThreadFactory;
-import application.types.images.container.TImageContainer;
 import application.types.interfaces.IWebCodes;
 import application.types.interfaces.IWebCodes.Codes;
 import javafx.application.Platform;
@@ -38,15 +39,16 @@ public class TGrabber extends Observable implements Runnable
 	private boolean stop;
 	private BlockingDeque<Action> __grabber;
 	private Status __status;
+	private TViewport __viewport;
 	
-	
-	public TGrabber(TTileManager manager, BlockingDeque<Action> __grabber_deque) 
+	public TGrabber(TTileManager manager, BlockingDeque<Action> __grabber_deque, TViewport viewport) 
 	{
 		this.__tiles = manager;
 		this.__grabber = __grabber_deque;
 		
 		this.url = null;
 		this.__status = Status.IDLE;
+		this.__viewport = viewport;
 	}
 
 	public void setURL(URL url, boolean forceGrab) throws InterruptedException
@@ -106,9 +108,9 @@ public class TGrabber extends Observable implements Runnable
 					for (Future<TImage> image : images)
 						finals.add(image.get());
 					
-					List<TImageContainer> containers = new ArrayList<TImageContainer>();
+					List<TTile> containers = new ArrayList<TTile>();
 					for (TImage image : finals)
-						containers.add(new TImageContainer(image, new ImageView()));
+						containers.add(new TTile(__viewport, image, new ImageView()));
 					
 					//has to happen on JavaFX thread, otherwise there will be problems
 					Platform.runLater(new Runnable() {
