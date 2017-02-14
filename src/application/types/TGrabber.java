@@ -22,7 +22,8 @@ import application.extensions.connections;
 import application.types.custom.gallery.TGallery;
 import application.types.custom.gallery.TGallery.Action;
 import application.types.custom.gallery.TViewport;
-import application.types.custom.gallery.tiles.TTile;
+import application.types.custom.gallery.tiles.TTileManager;
+import application.types.custom.gallery.tiles.tile.TTile;
 import application.types.factories.FThreadFactory;
 import application.types.interfaces.IWebCodes;
 import application.types.interfaces.IWebCodes.Codes;
@@ -39,8 +40,7 @@ public class TGrabber extends Observable implements Runnable
 	private boolean stop;
 	private BlockingDeque<Action> __grabber;
 	private Status __status;
-	private TViewport __viewport;
-	
+
 	public TGrabber(TTileManager manager, BlockingDeque<Action> __grabber_deque, TViewport viewport) 
 	{
 		this.__tiles = manager;
@@ -48,7 +48,6 @@ public class TGrabber extends Observable implements Runnable
 		
 		this.url = null;
 		this.__status = Status.IDLE;
-		this.__viewport = viewport;
 	}
 
 	public void setURL(URL url, boolean forceGrab) throws InterruptedException
@@ -110,7 +109,7 @@ public class TGrabber extends Observable implements Runnable
 					
 					List<TTile> containers = new ArrayList<TTile>();
 					for (TImage image : finals)
-						containers.add(new TTile(__viewport, image, new ImageView()));
+						containers.add(new TTile(image, new ImageView()));
 					
 					//has to happen on JavaFX thread, otherwise there will be problems
 					Platform.runLater(new Runnable() {
@@ -136,6 +135,7 @@ public class TGrabber extends Observable implements Runnable
 				if (this.__status == Status.ERROR)
 				{
 					//possibly wait on a some boolean value to become true, perhaps a global boolean gGrabberRunning?
+					//was I drunk when I wrote this?
 				}
 				
 				

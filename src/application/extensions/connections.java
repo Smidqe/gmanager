@@ -7,12 +7,15 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import javafx.scene.image.Image;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.util.Arrays;
+
+/*
+ * This is quite horrible to be honest, I need to rewrite this one eventually. Perhaps get rid of the staticness of this class and turn it into a normal class
+ * Or atleast generalize it.
+ */
 
 public class connections {
 	public static String ping(String site) throws MalformedURLException, IOException
@@ -27,7 +30,7 @@ public class connections {
 		return value;
 	}
 	
-	//not really necessary, but good nonetheless
+	//very simple method to verify if the url is valid, probably should switch to a regex eventually.
 	public static URL verify(String site) throws MalformedURLException {
 		if (site.isEmpty())
 			return null;
@@ -74,19 +77,5 @@ public class connections {
 		__reader.close();
 		
 		return json;
-	}
-	
-	public static Image getImage(URL url) throws MalformedURLException
-	{
-		return getImage(url.toString());
-	}
-	
-	public static Image getImage(String url) throws MalformedURLException
-	{
-		URL __url;
-		if ((__url = verify(url)) == null)
-			return null;
-			
-		return new Image(__url.toString(), 150, 150, true, false, false);
 	}
 }

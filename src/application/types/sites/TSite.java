@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-
+@SuppressWarnings("unused")
 public class TSite 
 {
 	private String name;
@@ -16,13 +16,8 @@ public class TSite
 	private List<String> skippables;
 	private Map<String, URL> urls;
 	private boolean authenticate;
-	
-	
-	//possible future variables
-	/*
-	private boolean https;
-	private boolean 
-	*/
+
+	private Map<String, String> variables;
 	
 	public TSite()
 	{

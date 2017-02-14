@@ -1,9 +1,13 @@
 package application.types.custom.gallery;
 
 import javafx.geometry.BoundingBox;
-import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.TilePane;
+
+/*
+	TODO:
+		- Turn this into a singleton, there is no need for multiple viewports unless I make a tabbed image searches.
+ */
 
 public class TViewport {
 
@@ -21,7 +25,9 @@ public class TViewport {
 	public BoundingBox getViewportLocation()
 	{
 		double __value = (__tiles.getHeight() - __scroll.getViewportBounds().getHeight()) * __scroll.getVvalue();
-		return new BoundingBox(0, __value, __scroll.getWidth(), __scroll.getViewportBounds().getHeight());
+		BoundingBox __bounds = new BoundingBox(0, __value, __scroll.getWidth(), __scroll.getViewportBounds().getHeight());
+		
+		return __bounds;
 	}
 	
 	public BoundingBox getViewportBounds()
@@ -39,9 +45,13 @@ public class TViewport {
 		return this.__scroll;
 	}
 	
-	public boolean intersects(Node node)
+	public int getTilesInRow()
 	{
-		return getViewportLocation().intersects(node.getBoundsInParent());
+		return (int) Math.floor(__scroll.getWidth() / 150);
 	}
 	
+	public boolean intersects(BoundingBox box)
+	{
+		return getViewportLocation().intersects(box);
+	}
 }

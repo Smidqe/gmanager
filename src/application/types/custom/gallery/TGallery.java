@@ -17,8 +17,7 @@ import application.types.TGrabber;
 import application.types.TGrabber.Status;
 import application.types.factories.FThreadFactory;
 import application.types.sites.TSite;
-//import application.types.TThumbnailRefresher;
-import application.types.TTileManager;
+import application.types.custom.gallery.tiles.TTileManager;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.BoundingBox;
@@ -41,7 +40,6 @@ public class TGallery
 	private TTileManager __manager;
 	private TViewport __viewport;
 	private TGrabber __grabber;
-	//private TThumbnailRefresher __refresher;
 	private TCacheManager __cache;
 	private TSite __site;
 	private int __current_page = 1;

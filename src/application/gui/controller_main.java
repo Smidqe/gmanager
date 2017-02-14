@@ -164,7 +164,7 @@ public class controller_main implements Initializable
 			case "Search": mode(__layers.get(__INDEX_LAYER_SEARCH), true); break;
 			case "mi_account" : mode(__layers.get(__INDEX_LAYER_ACCOUNT), true); break;
 			case "mi_settings" : mode(__layers.get(__INDEX_LAYER_SETTINGS), true); break;
-			case "mi_switch" : mode(__layers.get(__INDEX_LAYER_PAGESWITCH), true); break;
+			//case "mi_switch" : mode(__layers.get(__INDEX_LAYER_PAGESWITCH), true); break;
 			default: return;
 		}
 	}
@@ -317,17 +317,6 @@ public class controller_main implements Initializable
 		
 		if (cursor.equals(Cursor.E_RESIZE) || cursor.equals(Cursor.NE_RESIZE) || cursor.equals(Cursor.SE_RESIZE))
 			scene.getWindow().setWidth(event.getSceneX());
-	}
-	
-	@SuppressWarnings("unused")
-	private List<Integer> getMaxTilesInViewport(ScrollPane parent, TilePane tiles)
-	{
-		List<Integer> values = new ArrayList<Integer>(2);
-		
-		values.set(0, (int) (parent.getViewportBounds().getWidth() / tiles.getTileWidth()));
-		values.set(1, (int) (parent.getViewportBounds().getWidth() / tiles.getTileWidth()));
-		
-		return values;
 	}
 	
 	@Override

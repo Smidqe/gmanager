@@ -3,6 +3,7 @@ package application.types;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import application.types.custom.gallery.tiles.TTileManager;
 import application.types.sites.TSite;
 
 /*
