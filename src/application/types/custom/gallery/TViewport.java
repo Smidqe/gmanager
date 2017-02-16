@@ -7,16 +7,17 @@ import javafx.scene.layout.TilePane;
 /*
 	TODO:
 		- Turn this into a singleton, there is no need for multiple viewports unless I make a tabbed image searches.
+			- Even if I do that something needs to be rewritten
  */
 
-public class TViewport {
+public class TViewport 
+{
 
 	private TilePane __tiles;
 	private ScrollPane __scroll;
 	
 	public TViewport(TilePane tiles, ScrollPane scroll) 
 	{
-		// TODO Auto-generated constructor stub
 		__scroll = scroll;
 		__tiles = tiles;
 	}

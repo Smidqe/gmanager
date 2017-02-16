@@ -3,6 +3,7 @@ package application.types;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import application.types.custom.gallery.cache.TCacheManager;
 import application.types.custom.gallery.tiles.TTileManager;
 import application.types.sites.TSite;
 
@@ -31,7 +32,7 @@ public class TManager
 			//normally it would load necessary information from ini files.
 			this.site.setURL("images", new URL("https://derpibooru.org/images.json"));
 			//this.tileManager = TTileManager.instance();
-			this.cacheManager = new TCacheManager();
+			this.cacheManager = TCacheManager.instance();
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

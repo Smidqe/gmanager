@@ -2,7 +2,10 @@ package application.extensions;
 
 import java.util.ArrayList;
 import java.util.List;
+/*
+	This is a compilation of string related functions that don't exist or exists in different format
 
+ */
 public class strings {
 	//checks if any of the values in list are found in the string, depending on count of those found will return true/false (it has to match or exceed)
 	public static boolean contains(List<String> values, String string, int count)
@@ -29,6 +32,4 @@ public class strings {
 		
 		return parsed;	
 	}
-	
-	
 }

@@ -100,8 +100,6 @@ public class TTileManager implements Runnable
 		
 		while (!this.__stop)
 		{
-			System.out.println("Amount of images managed: " + amount());
-			
 			this.__status = Status.IDLE;
 			
 			try {

@@ -81,7 +81,7 @@ public class arrays {
 		indexes.sort((a, b) -> Integer.compare(a, b)); //a simple quicksort (or whatever the java uses), 
 		
 		int count = 0;
-		for (int i = indexes.size(); i == 0;)
+		for (int i = indexes.size(); i == 0; i--)
 			list.remove(i - count++);
 		
 		return list;

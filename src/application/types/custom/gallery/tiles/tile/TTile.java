@@ -1,13 +1,14 @@
 package application.types.custom.gallery.tiles.tile;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
-import application.types.TCacheManager;
+import application.extensions.images;
 import application.types.TImage;
 import application.types.TImage.Maps;
-import application.types.TResult;
 import application.types.custom.gallery.TViewport;
+import application.types.custom.gallery.cache.TCacheAction;
+import application.types.custom.gallery.cache.TCacheAction.cAction;
+import application.types.custom.gallery.cache.TCacheManager;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -39,6 +40,7 @@ public class TTile implements Runnable
 	private int __id;
 	
 	private ChangeListener<Number> __listener;
+	private TCacheManager __manager;
 	
 	//this only meant for adding a image to node if it doesn't exist
 	private Image __temp;
@@ -53,8 +55,7 @@ public class TTile implements Runnable
 		this.__action = Action.NULL;
 		
 		this.__viewport = null;
-
-
+		this.__manager = TCacheManager.instance();
 	}
 	
 	public void bindToViewport(TViewport viewport)
@@ -178,41 +179,45 @@ public class TTile implements Runnable
 
 		String id = this.__data.getProperty(Maps.DATA, "id");
 		String size = this.__data.getProperty(Maps.LINKS, "thumb_small"); //thumb small is placeholder, once we have 
-		TCacheManager __manager = TCacheManager.instance();
-		Future<TResult<Image>> __job = null;
-		
-		if (__manager.exists(id)) // && !__manager.inUse(id)
+		TCacheAction __cache = null;
+		//TODO: Check from the manager if the image is in use and if it 
+		if (__manager.exists(id))
 		{
+			//while (__manager.inUse(id))
+			//	Thread.sleep(1)
+			
 			//add a job to cache manager
-			__manager.load(id, size);
+			__cache = __manager.get(id);
+			__cache.setAction(cAction.READ);
 			
-			//wait while it is in the queue
-			while (__manager.inQueue(id))
+			while ((__temp = __cache.getImage()) == null)
 				Thread.sleep(1);
-			
-			//we can then get it from the manager
-			if ((__job = __manager.getStartedJobs().get(id)) == null)
-				return false;
-			
-			//it'll wait even more once it has been got (possible)
-			__temp = __job.get().get();
-			
-			//delete the job from the map
-			__manager.getStartedJobs().remove(id);
 		}
 		
+		//meaning it doesn't exist
 		if (__temp == null)
 		{
-			//check if url is valid
-			
 			//load the image from internet
 			__temp = new Image(size, 150, 150, true, false, false);
 			
 			while (__temp.getProgress() != 1)
 				Thread.sleep(1);
 			
-			//enable once the cache manager has been rewritten
-			//__manager.save(__temp, id, this.__data.getProperty(Maps.DATA, "original_format"));
+			//gif files still cause trouble, since they cannot be cloned the same method as other formats. due to their animation
+			if (!this.__data.getProperty(Maps.DATA, "original_format").equals("gif"))
+			{
+				__manager.add(new TCacheAction(id, images.clone(__temp)));
+			
+				//don't check the data when it is running
+				while (__manager.getStatus() == TCacheManager.Status.RUNNING)
+					Thread.sleep(1);
+					
+				while (!__manager.exists(id))
+					Thread.sleep(1);
+				
+				__cache = __manager.get(id);
+				__cache.setAction(cAction.WRITE);
+			}
 		}
 		
 		Platform.runLater(new Runnable(){
