@@ -299,8 +299,6 @@ public class TTile implements Runnable
 				{
 					case SHOW:
 					{
-						if (this.__hidden)
-							break;
 						//there is no need to load if it is hidden
 						if (!__viewport.intersects(getLocation()))
 							break;
@@ -315,7 +313,7 @@ public class TTile implements Runnable
 					
 					case HIDE:
 					{
-						if (!this.__hidden)
+						if (__viewport.intersects(getLocation()))
 							break;
 						
 						release();
