@@ -35,6 +35,7 @@ public class TTile implements Runnable
 
 	private boolean __stop;
 	private boolean __running;
+	private boolean __hidden;
 	
 	private int __id;
 	
@@ -210,21 +211,21 @@ public class TTile implements Runnable
 			
 			//gif files still cause trouble, since they cannot be cloned the same method as other formats. due to their animation
 			//disabled for now, until I figure out what's wrong with the cache
-//			if (!this.__data.getProperty(Maps.DATA, "original_format").equals("gif"))
-//			{
-//				__manager.add(new TCacheAction(id, images.clone(__temp)));
-//			
-//				//don't check the data when it is running
-//				while (__manager.getStatus() == TCacheManager.Status.RUNNING)
-//					Thread.sleep(1);
-//					
-//				while (!__manager.exists(id))
-//					Thread.sleep(1);
-//				
-//				__cache = __manager.get(id);
-//				__cache.setFormat(this.__data.getProperty(Maps.DATA, "original_format"));
-//				__cache.setAction(TCacheAction.Action.WRITE);
-//			}
+			if (!this.__data.getProperty(Maps.DATA, "original_format").equals("gif"))
+			{
+				__manager.add(new TCacheAction(id, images.clone(__temp)));
+			
+				//don't check the data when it is running
+				while (__manager.getStatus() == TCacheManager.Status.RUNNING)
+					Thread.sleep(1);
+					
+				while (!__manager.exists(id))
+					Thread.sleep(1);
+				
+				__cache = __manager.get(id);
+				__cache.setFormat(this.__data.getProperty(Maps.DATA, "original_format"));
+				__cache.setAction(TCacheAction.Action.WRITE);
+			}
 		}
 		
 		Platform.runLater(new Runnable(){
@@ -298,6 +299,8 @@ public class TTile implements Runnable
 				{
 					case SHOW:
 					{
+						if (this.__hidden)
+							break;
 						//there is no need to load if it is hidden
 						if (!__viewport.intersects(getLocation()))
 							break;
@@ -305,12 +308,20 @@ public class TTile implements Runnable
 						if (!load())
 							System.out.println(this.__data.getProperty(Maps.DATA, "id") + " failed to load. Investigate why.");
 	
+						
+						this.__hidden = false;
 						break;
 					}
 					
 					case HIDE:
 					{
+						if (!this.__hidden)
+							break;
+						
 						release();
+						
+						this.__hidden = true;
+						
 						break;
 					}
 					
@@ -334,7 +345,7 @@ public class TTile implements Runnable
 			
 		}
 	
-		System.out.println("TTile: " + this.__data.getProperty(Maps.DATA, "id") + " stopped");
+		//System.out.println("TTile: " + this.__data.getProperty(Maps.DATA, "id") + " stopped");
 	}
 }
 

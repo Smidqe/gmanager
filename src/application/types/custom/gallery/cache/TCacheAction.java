@@ -2,16 +2,10 @@ package application.types.custom.gallery.cache;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.LinkedBlockingDeque;
-
 import javax.imageio.ImageIO;
 
 import application.extensions.images;
@@ -36,16 +30,13 @@ public class TCacheAction implements Runnable
 	private Status __status;
 	private String __id;
 	private String __folder;
-	
-	private BlockingDeque<Action> __deque;
-	
+
 	//rest of the variables will be handled in TCacheManager
 	public TCacheAction(String id, Image image) 
 	{
 		this.__image = image;
 		this.__id = id;
 		this.__folder = TSettings.instance().getPath("cache");
-		this.__deque = new LinkedBlockingDeque<Action>();
 	}
 
 	//mainly used for reading to get the image
@@ -104,21 +95,26 @@ public class TCacheAction implements Runnable
 		this.__format = format;
 	}
 	
-	public void read() throws IOException
+	public void read() throws IOException, InterruptedException
 	{
 		System.out.println(Paths.get(__folder, __id).toString());
 		
 		if (!Files.exists(Paths.get(__folder, __id), new LinkOption[] {LinkOption.NOFOLLOW_LINKS}))
 			return;
-		
+
 		//not sure how to approach this, perhaps turning a file input into a byte[] array and from there creating the image? Since gif reading doesn't work
 		//byte[] __bytes = Files.readAllBytes(Paths.get(this.__folder, this.__id));
 
+		File __file = Paths.get(__folder, __id).toFile();
+		
+		while (!__file.canRead())
+			Thread.sleep(1);
+		
 		this.__image = SwingFXUtils.toFXImage(ImageIO.read(new ByteArrayInputStream(Files.readAllBytes(Paths.get(this.__folder, this.__id)))), null);
 		//this.__image = new Image(new ByteArrayInputStream(__bytes));
 	}
 	
-	public void write() throws IOException
+	public void write() throws IOException, InterruptedException
 	{
 		//dont write if the file already exists (there is no reason)
 		System.out.println(Paths.get(__folder, __id).toString());
@@ -131,8 +127,11 @@ public class TCacheAction implements Runnable
 		if (!__file.exists())
 			__file.createNewFile();
 		
-		ImageIO.write(SwingFXUtils.fromFXImage(__image, null), __format, __file);
+		while (!__file.canWrite())
+			Thread.sleep(1);
 		
+		ImageIO.write(SwingFXUtils.fromFXImage(__image, null), __format, __file);
+
 		//Files.write(Paths.get(__folder, __id), images.getBytes(this.__image), StandardOpenOption.CREATE);
 	}
 	

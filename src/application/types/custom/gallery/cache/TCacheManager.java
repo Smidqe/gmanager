@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -29,7 +29,7 @@ public class TCacheManager implements Runnable
 	private boolean __stop;
 	
 	private BlockingDeque<TCacheAction> __queue;
-	private List<TCacheAction> __managed;
+	private Map<String, TCacheAction> __managed; //change it into map instead of list (there is no concurrent list
 	private String __path;
 	
 	//the executor for IO handlers.
@@ -44,7 +44,7 @@ public class TCacheManager implements Runnable
 		this.__executor = Executors.newCachedThreadPool();
 		this.__queue = new LinkedBlockingDeque<TCacheAction>();
 		this.__path = TSettings.instance().getPath("cache");
-		this.__managed = new ArrayList<TCacheAction>();
+		this.__managed = new ConcurrentHashMap<String, TCacheAction>();
 		
 		this.__status = Status.IDLE;
 	}
@@ -67,10 +67,10 @@ public class TCacheManager implements Runnable
 
 		TCacheAction __current = null;
 		
-		for (TCacheAction action : this.__managed)
-			if (action.getID().equals(id))
+		for (String _tid : this.__managed.keySet())
+			if (_tid.equals(id))
 			{
-				__current = action;
+				__current = this.__managed.get(id);
 				break;
 			}
 		
@@ -114,7 +114,7 @@ public class TCacheManager implements Runnable
 				__job.setFolder(__path);
 				
 				__executor.submit(__job);
-				__managed.add(__job);
+				__managed.put(__job.getID(), __job);
 				
 				//what else to do here?
 				
@@ -132,11 +132,11 @@ public class TCacheManager implements Runnable
 		this.__stop = true;
 		this.__queue.put(new TCacheAction("-1", null));
 		
-		for (TCacheAction action : __managed)
+		for (String action : __managed.keySet())
 		{
-			action.stop();
-			if (Files.exists(Paths.get(__path, action.getID()), new LinkOption[] {LinkOption.NOFOLLOW_LINKS}))
-				Files.delete(Paths.get(__path, action.getID()));
+			__managed.get(action).stop();
+			if (Files.exists(Paths.get(__path, action), new LinkOption[] {LinkOption.NOFOLLOW_LINKS}))
+				Files.delete(Paths.get(__path, action));
 		}
 	}
 }
