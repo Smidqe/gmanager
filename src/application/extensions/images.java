@@ -40,9 +40,9 @@ public class images
 		int w = (int) __image.getWidth();
 		int h = (int) __image.getHeight();
 		
-		System.out.println("w: " + w + ", h: " + h);
-		System.out.println("__reader: " + __reader);
-		//not sure why we need the * 4
+		//System.out.println("w: " + w + ", h: " + h);
+		//System.out.println("__reader: " + __reader);
+
 		byte[] __buffer = new byte[w * h * 4];
 		
 		__reader.getPixels(0, 0, w, h, PixelFormat.getByteBgraInstance(), __buffer, 0, w * 4);

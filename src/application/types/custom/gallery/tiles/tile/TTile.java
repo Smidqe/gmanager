@@ -7,7 +7,6 @@ import application.types.TImage;
 import application.types.TImage.Maps;
 import application.types.custom.gallery.TViewport;
 import application.types.custom.gallery.cache.TCacheAction;
-import application.types.custom.gallery.cache.TCacheAction.cAction;
 import application.types.custom.gallery.cache.TCacheManager;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -183,12 +182,18 @@ public class TTile implements Runnable
 		//TODO: Check from the manager if the image is in use and if it 
 		if (__manager.exists(id))
 		{
+			System.out.println("TTile: # " + this.__id + ": Loading from manager");
+			
 			//while (__manager.inUse(id))
 			//	Thread.sleep(1)
 			
 			//add a job to cache manager
 			__cache = __manager.get(id);
-			__cache.setAction(cAction.READ);
+			
+			while (__cache.getStatus() == TCacheAction.Status.RUNNING)
+				Thread.sleep(1);
+			
+			__cache.setAction(TCacheAction.Action.READ);
 			
 			while ((__temp = __cache.getImage()) == null)
 				Thread.sleep(1);
@@ -204,20 +209,22 @@ public class TTile implements Runnable
 				Thread.sleep(1);
 			
 			//gif files still cause trouble, since they cannot be cloned the same method as other formats. due to their animation
-			if (!this.__data.getProperty(Maps.DATA, "original_format").equals("gif"))
-			{
-				__manager.add(new TCacheAction(id, images.clone(__temp)));
-			
-				//don't check the data when it is running
-				while (__manager.getStatus() == TCacheManager.Status.RUNNING)
-					Thread.sleep(1);
-					
-				while (!__manager.exists(id))
-					Thread.sleep(1);
-				
-				__cache = __manager.get(id);
-				__cache.setAction(cAction.WRITE);
-			}
+			//disabled for now, until I figure out what's wrong with the cache
+//			if (!this.__data.getProperty(Maps.DATA, "original_format").equals("gif"))
+//			{
+//				__manager.add(new TCacheAction(id, images.clone(__temp)));
+//			
+//				//don't check the data when it is running
+//				while (__manager.getStatus() == TCacheManager.Status.RUNNING)
+//					Thread.sleep(1);
+//					
+//				while (!__manager.exists(id))
+//					Thread.sleep(1);
+//				
+//				__cache = __manager.get(id);
+//				__cache.setFormat(this.__data.getProperty(Maps.DATA, "original_format"));
+//				__cache.setAction(TCacheAction.Action.WRITE);
+//			}
 		}
 		
 		Platform.runLater(new Runnable(){

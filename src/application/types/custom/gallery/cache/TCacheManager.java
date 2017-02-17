@@ -16,7 +16,7 @@ import application.types.TSettings;
 
 /*
 	TODO:
-		- This will probable handle multiple galleries at once eventually, not quite sure yet
+		- Wait for the 
 		
 
  */
