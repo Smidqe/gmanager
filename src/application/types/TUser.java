@@ -12,6 +12,7 @@ public class TUser
 		// TODO Auto-generated constructor stub
 	}
 	
+	//not sure for what is this for...
 	public String getKey()
 	{
 		return this.__key;

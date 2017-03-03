@@ -14,6 +14,7 @@ import application.types.TGrabber;
 import application.types.TGrabber.Status;
 import application.types.factories.FThreadFactory;
 import application.types.sites.TSite;
+import application.types.sites.TSite.MAPS;
 import application.types.custom.gallery.cache.TCacheManager;
 import application.types.custom.gallery.tiles.TTileManager;
 import javafx.beans.value.ChangeListener;
@@ -27,7 +28,7 @@ import javafx.scene.layout.TilePane;
 	TODO:
 		- 
  */
-
+@SuppressWarnings("unused")
 public class TGallery
 {
 	public enum Count {IMAGES, PAGES};
@@ -42,10 +43,12 @@ public class TGallery
 	private TSite __site;
 	private int __current_page = 1;
 	
+	private boolean __continuous; // for the future if user wants paged or continuous scrolling. also causes
+	
 	private ExecutorService __threads;
 	private volatile BlockingDeque<Action> __action_deque;
 	
-	//meant for the background threads
+	//meant for the background threads, not sure anymore, probably don't need it.
 	private List<Future<?>> __futures;
 	
 	public TGallery(TilePane tiles, ScrollPane container) throws MalformedURLException, InterruptedException 
@@ -68,8 +71,9 @@ public class TGallery
 		
 		//TODO: For testing! Remove once finished;
 		this.__site = new TSite();
-		this.__site.setURL("images", new URL("https://derpibooru.org/images.json"));
-		this.__grabber.setURL(this.__site.getURL("images", "?page=", __current_page), false);
+		this.__site.put(MAPS.VARIABLE, "prefix", "?page=");
+		this.__site.putURL("images", new URL("https://derpibooru.org/images.json"));
+		this.__grabber.setURL(this.__site.getURL("images", __current_page), false);
 		
 		//add a listener for checking if we have reached the bottom of the scroll
 		__container.vvalueProperty().addListener(createScrollListener());
@@ -91,7 +95,7 @@ public class TGallery
 				try {					
 					if ((valueNew.doubleValue() == 1.0) && (__grabber.getStatus() == Status.IDLE))
 					{
-						__grabber.setURL(__site.getURL("images", "?page=", ++__current_page), false);
+						__grabber.setURL(__site.getURL("images", ++__current_page), false);
 						__action_deque.put(Action.GRABBER);
 					}
 				} catch (InterruptedException e1) {

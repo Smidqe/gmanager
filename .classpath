@@ -5,5 +5,6 @@
 	<classpathentry kind="con" path="org.eclipse.fx.ide.jdt.core.JAVAFX_CONTAINER"/>
 	<classpathentry kind="lib" path="src/libraries/json-simple-1.1.1.jar"/>
 	<classpathentry kind="lib" path="src/libraries/libFileExtensions.0.2.jar"/>
+	<classpathentry kind="lib" path="src/libraries/ini4j-0.5.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,19 +1,25 @@
 package application.types;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.ini4j.Ini;
+import org.ini4j.Profile.Section;
+
+import application.extensions.strings;
 import application.types.sites.TSite;
-import libFileExtensions.files.TIniFile;
 
 public class TSettings 
 {
-
-	private Map<String, String> __settings;
-	private Map<String, String> __paths;
-	private Map<String, TSite> __sites;
+	enum Maps {SETTINGS, PATHS, SITES, FILES};
 	
+	private Map<String, String> __settings; //holds all global variables
+	private Map<String, String> __paths; //holds all paths
+	private Map<String, TSite> __sites; //holds all sites
+	private Map<String, Ini> __files;
+	//keep this as a singleton
 	private static TSettings self = new TSettings();
 	
 	public synchronized static TSettings instance()
@@ -26,36 +32,61 @@ public class TSettings
 		this.__settings = new HashMap<String, String>();
 		this.__paths = new HashMap<String, String>();
 		this.__sites = new HashMap<String, TSite>();
+		this.__files = new HashMap<String, Ini>();
 		
-		//load ini files to the according maps
-		try 
-		{
-			TIniFile __file = new TIniFile("src/application/data/settings/settings.ini", false);
-			
-			__file.information();
+		this.load();
+	}
+
+	private void load()
+	{
+		this.__paths.put("cache", "src/application/data/cache/");		
 		
+		
+		//load all files
+		Ini __ini = null;
+		try {
+			__ini = new Ini(new File("src/application/data/resources/config/settings.ini"));
 			
-			Map<String, Map<String, String>> information = __file.get();
+			//load the ini file
+			__ini.load();
 			
-			for (String key : information.keySet())
+			Section __map = null;
+			for (String __section : __ini.keySet())
 			{
-				switch(key)
+				__map = __ini.get(__section);
+				
+				System.out.println(__section);
+				for (String __key : __map.keySet())
 				{
-					case "SETTINGS": break;
-					case "PATHS": break;
-					
-					default: break;
+					switch (__section) 
+					{
+						case "PATHS": __paths.put(__key, __map.get(__key)); break;
+						case "SETTINGS": __settings.put(__key, __map.get(__key)); break;
+						case "FILES": __files.put(__key, new Ini(new File(__map.get(__key))));
+						
+						default:
+							break;
+					}
 				}
 			}
-		
-			this.__paths.put("cache", "src/application/data/cache/");
 			
-		} 
-		catch (IOException e) 
-		{
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}	
+		
+		//System.out.println(strings.parse("[&&, ||, !, -, AND, OR, NOT, ~, ^, (, )]", ',', "[]".toCharArray()));
+		//__ini = __files.get("sites");
+	}
+	
+	public void save(Maps map)
+	{
+		
+	}
+	
+	public void change(Maps map, Object value)
+	{
+		
 	}
 	
 	public synchronized String getString(String key)

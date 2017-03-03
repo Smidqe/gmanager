@@ -22,7 +22,6 @@ public class TViewport
 		__tiles = tiles;
 	}
 	
-	
 	public BoundingBox getViewportLocation()
 	{
 		double __value = (__tiles.getHeight() - __scroll.getViewportBounds().getHeight()) * __scroll.getVvalue();

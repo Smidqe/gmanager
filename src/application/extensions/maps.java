@@ -28,5 +28,14 @@ public class maps
 		return to;
 	}
 	
-	
+	public static <K, V> Map<K, V> move(Map<K, V> from, Map<K, V> to, List<K> keys)
+	{
+		if (from == null || to == null)
+			throw new NullPointerException("from == null or to == null");
+		
+		for (K key : keys)
+			to = move(from, to, key);
+			
+		return to;
+	}
 }

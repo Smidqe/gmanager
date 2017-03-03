@@ -21,8 +21,24 @@ public class integers {
 		//swap the values if the first index is higher than the second (reversed order)
 		if (range.get(0) > range.get(1))
 			range = arrays.swap(range, 0, 1);
-
+		
 		return inRange(value, range.get(0), range.get(1));
 	}
 
+	public static int random(int min, int max)
+	{
+		Double __random = (max - min * Math.random());
+	
+		return __random.intValue();
+	}
+	
+	public static int random(int[] range)
+	{
+		return random(range[0], range[1]);
+	}
+	
+	public static int random(int num)
+	{
+		return random(0, num);
+	}
 }

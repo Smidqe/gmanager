@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import application.types.TSettings;
+import application.types.factories.FThreadFactory;
 
 
 /*
@@ -41,7 +42,7 @@ public class TCacheManager implements Runnable
 	{
 		this.__stop = false;
 		
-		this.__executor = Executors.newCachedThreadPool();
+		this.__executor = Executors.newCachedThreadPool(new FThreadFactory("TCacheManager", "Subthreads", true));
 		this.__queue = new LinkedBlockingDeque<TCacheAction>();
 		this.__path = TSettings.instance().getPath("cache");
 		this.__managed = new ConcurrentHashMap<String, TCacheAction>();
@@ -85,6 +86,16 @@ public class TCacheManager implements Runnable
 		return (get(id) != null);
 	}
 	
+	public boolean remove(String id) throws InterruptedException 
+	{
+		if (!this.exists(id))
+			return true;
+		
+		this.__managed.remove(id);
+		
+		return exists(id);
+	}
+	
 	public static TCacheManager instance()
 	{
 		return __self;
@@ -117,6 +128,7 @@ public class TCacheManager implements Runnable
 				__managed.put(__job.getID(), __job);
 				
 				//what else to do here?
+				System.out.println("__managed.size: " + this.__managed.size());
 				
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -139,4 +151,6 @@ public class TCacheManager implements Runnable
 				Files.delete(Paths.get(__path, action));
 		}
 	}
+
+
 }

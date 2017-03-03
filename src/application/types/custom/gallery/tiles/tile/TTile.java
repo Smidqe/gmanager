@@ -17,7 +17,7 @@ import javafx.scene.image.ImageView;
 
 /*
 	TODO:
-		- Figure out a method to calculate the position. DONE
+		- Currently none;
 
  */
 
@@ -56,6 +56,7 @@ public class TTile implements Runnable
 		
 		this.__viewport = null;
 		this.__manager = TCacheManager.instance();
+		this.__hidden = true;
 	}
 	
 	public void bindToViewport(TViewport viewport)
@@ -69,14 +70,15 @@ public class TTile implements Runnable
 			@Override
 			public void changed(ObservableValue<? extends Number> arg0, Number arg1, Number arg2) 
 			{
+				//prevent it from updating it while it is running
 				if (!__running)
 				{
 					boolean clips = __viewport.intersects(getLocation());
 
-					if (!clips && __status == Status.LOADED)
+					if (!clips && __status == Status.LOADED && !__hidden)
 						__action = Action.HIDE;
 				
-					if (clips && (__status == Status.NONE || __status == Status.NULL))
+					if (clips && (__status == Status.NONE || __status == Status.NULL) && __hidden)
 						__action = Action.SHOW;
 				}
 			}};
@@ -183,34 +185,47 @@ public class TTile implements Runnable
 		//TODO: Check from the manager if the image is in use and if it 
 		if (__manager.exists(id))
 		{
-			System.out.println("TTile: # " + this.__id + ": Loading from manager");
-			
-			//while (__manager.inUse(id))
-			//	Thread.sleep(1)
-			
 			//add a job to cache manager
 			__cache = __manager.get(id);
 			
 			while (__cache.getStatus() == TCacheAction.Status.RUNNING)
+			{
+				//might happen
+				if (this.__action == Action.HIDE)
+					return false;
+					
 				Thread.sleep(1);
-			
+			}
 			__cache.setAction(TCacheAction.Action.READ);
-			
-			while ((__temp = __cache.getImage()) == null)
+			while (__cache.getStatus() == TCacheAction.Status.RUNNING)
 				Thread.sleep(1);
+
+			__temp = __cache.getImage();
+			
+			if (this.__action == Action.HIDE)
+			{
+				this.__running = false;
+				return false;
+			}
 		}
 		
+		if (this.__action == Action.HIDE)
+		{
+			this.__running = false;
+			return false;
+		}
 		//meaning it doesn't exist
 		if (__temp == null)
 		{
+			//System.out.println("TTile: # " + this.__id + ", " + id + ": Adding to manager");
+			
 			//load the image from internet
-			__temp = new Image(size, 150, 150, true, false, false);
+			__temp = new Image(size, 150, 150, true, false, true);
 			
 			while (__temp.getProgress() != 1)
 				Thread.sleep(1);
-			
+
 			//gif files still cause trouble, since they cannot be cloned the same method as other formats. due to their animation
-			//disabled for now, until I figure out what's wrong with the cache
 			if (!this.__data.getProperty(Maps.DATA, "original_format").equals("gif"))
 			{
 				__manager.add(new TCacheAction(id, images.clone(__temp)));
@@ -224,7 +239,19 @@ public class TTile implements Runnable
 				
 				__cache = __manager.get(id);
 				__cache.setFormat(this.__data.getProperty(Maps.DATA, "original_format"));
+				__cache.setDimensions((int) __temp.getWidth(), (int) __temp.getHeight());
 				__cache.setAction(TCacheAction.Action.WRITE);
+			
+				while (__cache.getStatus() == TCacheAction.Status.RUNNING)
+					Thread.sleep(1);
+				
+				//this might be because we failed to create a new file or some other error (currently non functional thing)
+				if (__cache.getStatus() == TCacheAction.Status.ERROR)
+					__manager.remove(id);
+			}
+			else
+			{
+				System.out.println("Cannot clone gifs, yet");
 			}
 		}
 		
@@ -240,8 +267,11 @@ public class TTile implements Runnable
 
 		if (__node.getImage() != null)
 			this.__status = Status.LOADED;
+		else
+			this.__status = Status.NONE;
 		
 		this.__running = false;
+		this.__hidden = false;
 		
 		return __node.getImage() != null;
 	}
@@ -257,6 +287,7 @@ public class TTile implements Runnable
 		{
 			this.__status = Status.NONE;
 			this.__running = false;
+			this.__hidden = true;
 			
 			return true;
 		}
@@ -274,6 +305,7 @@ public class TTile implements Runnable
 			Thread.sleep(1);
 		
 		this.__running = false;
+		this.__hidden = true;
 		
 		return this.__node.getImage() == null;		
 	}
@@ -299,38 +331,44 @@ public class TTile implements Runnable
 				{
 					case SHOW:
 					{
-						//there is no need to load if it is hidden
-						if (!__viewport.intersects(getLocation()))
+						if (!this.__hidden)
 							break;
+						//there is no need to load if it is hidden
 
-						if (!load())
-							System.out.println(this.__data.getProperty(Maps.DATA, "id") + " failed to load. Investigate why.");
-	
+						if (!load() && this.__action == Action.HIDE)
+							break;
 						
 						this.__hidden = false;
+						this.__action = Action.NULL;
 						break;
 					}
 					
 					case HIDE:
 					{
-						if (__viewport.intersects(getLocation()))
+						if (this.__hidden)
 							break;
-						
+
 						release();
 						
-						this.__hidden = true;
+						if (this.__action == Action.SHOW)
+							break;
 						
+						this.__hidden = true;
+						this.__action = Action.NULL;
 						break;
 					}
 					
 					case STOP: continue;
 					
 					default:
+					{
+						this.__action = Action.NULL;
 						break;
+					}
 				}
 				
-			
-				this.__action = Action.NULL;
+				
+				
 			} 
 			catch (Exception e) 
 			{

@@ -32,4 +32,44 @@ public class strings {
 		
 		return parsed;	
 	}
+	
+	
+	/*
+	 * This parses a given string which is a array in literal string form, to a list of it by given div and bracket chars
+	 */
+	public static List<String> parse(String string, char div, char[] bracket)
+	{
+		if (bracket.length > 2 || bracket.length == 0)
+			throw new IllegalArgumentException("");
+		
+		List<String> list = new ArrayList<String>();
+		
+		int prev = 0;
+		for (int i = 0; i < string.length(); i++)
+		{
+			char c = string.charAt(i);
+			
+			if (c == bracket[1])
+			{
+				//get the last one
+				list.add(string.substring(prev, i));
+				continue;
+			}
+			
+			if (c == bracket[0])
+			{
+				prev = i;
+				continue;
+			}
+			
+			if (c == div)
+			{
+				list.add(string.substring(prev + 1, i).trim());
+				prev = i + 1;
+			}
+		}
+		
+		return list;
+		
+	}
 }

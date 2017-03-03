@@ -11,6 +11,7 @@ import application.types.custom.gallery.TViewport;
 import application.types.custom.gallery.tiles.tile.TTile;
 import application.types.custom.gallery.tiles.tile.TTile.Action;
 import javafx.application.Platform;
+import javafx.scene.Node;
 import javafx.scene.layout.TilePane;
 
 public class TTileManager implements Runnable
@@ -86,6 +87,20 @@ public class TTileManager implements Runnable
 	{
 		this.__stop = true;
 		this.__queue.put(new TTile());
+	}
+	
+	public TTile getTile(int index)
+	{
+		return __images.get(index);
+	}
+	
+	public TTile getTile(Node node)
+	{
+		for (TTile __image : __images)
+			if (__image.getNode().equals(node))
+				return __image;
+		
+		return null;
 	}
 	
 	public int amount()

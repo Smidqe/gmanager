@@ -7,48 +7,73 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-@SuppressWarnings("unused")
 public class TSite 
 {
+	public enum MAPS {ID, URL, VARIABLE};
+	
 	private String name;
 
-	private Map<String, String> IDs;
-	private List<String> skippables;
-	private Map<String, URL> urls;
+	private Map<String, String> __IDs;
+	private Map<String, URL> __urls;
+	
+	private List<String> __skippables;
 	private boolean authenticate;
-
-	private Map<String, String> variables;
+	private boolean __searcheable;
+	
+	private Map<String, String> __variables;
 	
 	public TSite()
 	{
-		this.IDs = new WeakHashMap<String, String>();
-		this.skippables = new ArrayList<String>();
-		this.urls = new WeakHashMap<String, URL>();
+		this.__IDs = new WeakHashMap<String, String>();
+		this.__skippables = new ArrayList<String>();
+		this.__urls = new WeakHashMap<String, URL>();
+		this.__variables = new WeakHashMap<String, String>();
 	}
 
-	public void setURL(String name, URL url) throws MalformedURLException
+	public void putURL(String name, URL url) throws MalformedURLException
 	{
-		this.urls.put(name, url);
+		this.__urls.put(name, url);
 	}
 
-	public void setSkippable(String ID)
+	public void addSkippable(String ID)
 	{
-		this.skippables.add(ID);
+		this.__skippables.add(ID);
+	}
+
+	public boolean isSearcheable()
+	{
+		return this.__searcheable;
+	}
+	
+	public void put(MAPS map, String name, String value)
+	{
+		Map<String, String> __map = null;
+		
+		switch (map) 
+		{
+			case ID: __map = this.__IDs; break;
+			case VARIABLE: __map = this.__variables; break;
+
+			default:
+				break;
+		}
+		
+		__map.put(name, value);
 	}
 	
 	public void setID(String key, String value)
 	{
-		this.IDs.put(key, value);
+		this.__IDs.put(key, value);
 	}
 	
 	public Map<String, String> getIDs()
 	{
-		return this.IDs;
+		return this.__IDs;
 	}
 	
 	public List<String> getSkippables()
 	{
-		return this.skippables;
+		return this.__skippables;
 	}
 	
 	public String getName()
@@ -58,16 +83,16 @@ public class TSite
 	
 	public URL getURL(String name)
 	{
-		return getURL(name, "", 0);
+		return getURL(name, 0);
 	}
 	
-	public URL getURL(String name, String prefix, int page)
+	public URL getURL(String name, int page)
 	{
 		if (page == 0)
-			return this.urls.get(name);
+			return this.__urls.get(name);
 		
 		try {
-			return new URL(urls.get(name).toString() + prefix + String.valueOf(page));
+			return new URL(__urls.get(name).toString() + __variables.get("prefix") + String.valueOf(page));
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
